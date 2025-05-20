@@ -1,7 +1,7 @@
 SHELL=/usr/bin/env bash
 
 # Conda environment name and Python version
-ENV_NAME = ssa
+ENV_NAME = dra
 PYTHON_VERSION = 3.11
 
 # Default goal
