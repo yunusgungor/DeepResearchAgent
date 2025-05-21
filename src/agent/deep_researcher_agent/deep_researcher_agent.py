@@ -4,6 +4,7 @@ from typing import (
     Optional
 )
 import yaml
+import json
 from rich.panel import Panel
 from rich.text import Text
 
@@ -11,7 +12,8 @@ from src.tools import AsyncTool
 from src.exception import (
     AgentGenerationError,
     AgentParsingError,
-
+    AgentToolExecutionError,
+    AgentToolCallError
 )
 from src.base.async_multistep_agent import (PromptTemplates,
                                             populate_template,
@@ -27,8 +29,10 @@ from src.utils.agent_types import (
     AgentAudio,
     AgentImage,
 )
+from src.registry import register_agent
+from src.utils import assemble_project_path
 
-
+@register_agent("deep_researcher_agent")
 class DeepResearcherAgent(AsyncMultiStepAgent):
     def __init__(
         self,
@@ -68,7 +72,8 @@ class DeepResearcherAgent(AsyncMultiStepAgent):
             final_answer_checks=final_answer_checks,
         )
 
-        with open(self.config.template_path, "r") as f:
+        template_path = assemble_project_path(self.config.template_path)
+        with open(template_path, "r") as f:
             self.prompt_templates = yaml.safe_load(f)
         
         self.system_prompt = self.initialize_system_prompt()
@@ -182,7 +187,7 @@ class DeepResearcherAgent(AsyncMultiStepAgent):
         Perform one step in the ReAct framework: the agent thinks, acts, and observes the result.
         Returns None if the step is not final.
         """
-        memory_messages = self.write_memory_to_messages()
+        memory_messages = await self.write_memory_to_messages()
 
         input_messages = memory_messages.copy()
 

@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 import pandas as pd
 from typing import List
-import threading
 import json
 from datetime import datetime
 import asyncio
@@ -18,9 +17,8 @@ sys.path.append(root)
 from src.logger import logger
 from src.config import config
 from src.registry import REGISTED_MODELS
-from src.metric import question_scorer
 from src.agent import create_agent, prepare_response
-from src.dataset import GAIADataset
+from src.dataset import HLEDataset
 from src.utils import assemble_project_path
 
 append_answer_lock = threading.Lock()
@@ -33,36 +31,13 @@ def append_answer(entry: dict, jsonl_file: str) -> None:
     assert os.path.exists(jsonl_file), "File not found!"
     print("Answer exported to file:", jsonl_file.resolve())
 
-def filter_answers(answers_file):
-    answer_df = pd.read_json(answers_file, lines=True)
-
-    filttered_df = []
-    for row in answer_df.iterrows():
-        row = row[1]
-
-        prediction = row['prediction']
-        truth = row['true_answer']
-
-        if prediction is not None:
-            score = question_scorer(prediction, truth)
-            if score:
-                filttered_df.append(row)
-
-    filttered_df = pd.DataFrame(filttered_df)
-    filttered_df.to_json(answers_file, lines=True, orient='records')
-
-    logger.info(f"Previous answers filtered! {len(answer_df)} -> {len(filttered_df)}")
-
 def get_tasks_to_run(answers_file, dataset) -> List[dict]:
-    
+
     data = dataset.data
 
     logger.info(f"Loading answers from {answers_file}...")
     try:
         if os.path.exists(answers_file):
-            logger.info("Filtering answers starting.")
-            filter_answers(answers_file)
-            logger.info("Filtering answers ending.")
             
             done_questions = pd.read_json(answers_file, lines=True)["task_id"].tolist()
             logger.info(f"Found {len(done_questions)} previous results!")
@@ -81,7 +56,7 @@ async def answer_single_question(example, answers_file):
 
     logger.info(f"Task Id: {example['task_id']}, Final Answer: {example['true_answer']}")
 
-    question = example["question"]
+    augmented_question = example["question"]
 
     if example["file_name"]:
 
@@ -89,16 +64,16 @@ async def answer_single_question(example, answers_file):
         file_description = f" - Attached file: {example['file_name']}"
         prompt_use_files += file_description
 
-        question += prompt_use_files
+        augmented_question += prompt_use_files
 
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         # Run agent 🚀
-        final_result = await agent.run(task=question)
+        final_result = await agent.run(task=augmented_question)
 
-        agent_memory = agent.write_memory_to_messages(summary_mode=True)
+        agent_memory = await agent.write_memory_to_messages(summary_mode=True)
 
-        final_result = prepare_response(question, agent_memory, reformulation_model=REGISTED_MODELS["o3"])
+        final_result = await prepare_response(augmented_question, agent_memory, reformulation_model=REGISTED_MODELS["o3"])
 
         output = str(final_result)
         for memory_step in agent.memory.steps:
@@ -132,7 +107,6 @@ async def answer_single_question(example, answers_file):
         "agent_error": str(exception) if raised_exception else None,
         "start_time": start_time,
         "end_time": end_time,
-        "task": example["task"],
         "task_id": example["task_id"],
         "true_answer": example["true_answer"],
     }
@@ -140,7 +114,7 @@ async def answer_single_question(example, answers_file):
 
 async def main():
     # Init config and logger
-    config.init_config(config_path=assemble_project_path("configs/config_gaia.toml"))
+    config.init_config(config_path=assemble_project_path("configs/config_hle.toml"))
     logger.init_logger(config.log_path)
     logger.info(f"Initializing logger: {config.log_path}")
     logger.info(f"Load config: {config}")
@@ -149,7 +123,7 @@ async def main():
     logger.info("Registed models: %s", ", ".join(REGISTED_MODELS.keys()))
     
     # Load dataset
-    dataset = GAIADataset(
+    dataset = HLEDataset(
         path=config.dataset.path,
         name=config.dataset.name,
         split=config.split
@@ -159,7 +133,7 @@ async def main():
     # Load answers
     tasks_to_run = get_tasks_to_run(config.save_path, dataset)
     logger.info(f"Loaded {len(tasks_to_run)} tasks to run.")
-    
+
     # Run tasks
     batch_size = getattr(config, "concurrency", 4)
     for i in range(0, len(tasks_to_run), batch_size):

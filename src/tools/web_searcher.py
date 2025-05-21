@@ -117,7 +117,7 @@ class WebSearcherTool(AsyncTool):
     }
     output_type = 'any'
 
-    searcher_config = config.searcher
+    searcher_config = config.searcher_tool
     _search_engine: dict[str, WebSearchEngine] = {
         "google": GoogleSearchEngine()
     }

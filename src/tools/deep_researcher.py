@@ -9,6 +9,8 @@ from src.tools.web_searcher import WebSearcherTool, SearchResult
 from src.tools import AsyncTool, ToolResult
 from src.config import config
 from src.logger import logger
+from src.registry import register_tool
+
 
 _DEEP_RESEARCHER_DESCRIPTION = """Performs comprehensive research on a topic through multi-level web searches and content analysis. 
 Returns a structured summary of findings with source attribution and relevance ratings."""
@@ -224,6 +226,7 @@ class ExtractInsightsTool(AsyncTool):
         # In a real implementation, this would involve LLM interactions
         return insights
 
+@register_tool("deep_researcher")
 class DeepResearcherTool(AsyncTool):
     """Advanced research tool that explores a topic through iterative web searches."""
 
@@ -242,7 +245,7 @@ class DeepResearcherTool(AsyncTool):
     }
     output_type = "any"
 
-    deep_researcher_config = config.deep_researcher
+    deep_researcher_config = config.deep_researcher_tool
 
     max_depth = (
         getattr(deep_researcher_config, "max_depth", 2)
@@ -265,8 +268,8 @@ class DeepResearcherTool(AsyncTool):
         else 3
     )
 
-    def __init__(self, model):
-        self.model = model
+    def __init__(self):
+        self.model = REGISTED_MODELS[self.deep_researcher_config.model_id]
         self.web_searcher = WebSearcherTool()
         self.web_searcher.fetch_content = True # Enable content fetching
         super().__init__()

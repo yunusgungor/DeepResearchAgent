@@ -16,7 +16,9 @@ from src.tools import AsyncTool, ToolResult
 from src.tools.browser import Controller, CDP
 from src.utils import assemble_project_path
 from src.config import config
+from src.registry import register_tool
 
+@register_tool("auto_browser_use")
 class AutoBrowserUseTool(AsyncTool):
     name = "auto_browser_use"
     description = "A powerful browser automation tool that allows interaction with web pages through various actions. Automatically browse the web and extract information based on a given task."

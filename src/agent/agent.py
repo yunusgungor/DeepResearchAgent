@@ -1,15 +1,6 @@
 from src.config import config
 from src.logger import logger
-from src.registry import REGISTED_MODELS
-from src.tools.planning import PlanningTool
-from src.tools.deep_researcher import DeepResearcherTool
-from src.tools.python_interpreter import PythonInterpreterTool
-from src.tools.deep_analyzer import DeepAnalyzerTool
-from src.tools.auto_browser import AutoBrowserUseTool
-from src.agent.browser_use_agent.browser_use_agent import BrowserUseAgent
-from src.agent.deep_analyzer_agent.deep_analyzer_agent import DeepAnalyzerAgent
-from src.agent.deep_researcher_agent.deep_researcher_agent import DeepResearcherAgent
-from src.agent.planning_agent.planning_agent import PlanningAgent
+from src.registry import REGISTED_AGENTS, REGISTED_TOOLS, REGISTED_MODELS
 
 AUTHORIZED_IMPORTS = [
     "pandas",
@@ -18,76 +9,72 @@ AUTHORIZED_IMPORTS = [
 ]
 
 def create_agent():
-    # Initialize the deep analyzer agent
-    deep_analyzer_agent_config = config.agent.deep_analyzer_agent_config
-    deep_analyzer_agent = DeepAnalyzerAgent(
-        config=deep_analyzer_agent_config,
-        model=REGISTED_MODELS[deep_analyzer_agent_config.model_id],
-        tools=[
-            DeepAnalyzerTool(),
-            PythonInterpreterTool(
-                authorized_imports=AUTHORIZED_IMPORTS
+    
+    if config.agent.use_hierarchical_agent:
+        planning_agent_config = getattr(config.agent, "planning_agent_config")
+        
+        sub_agents_ids = planning_agent_config.managed_agents
+        sub_agents = []
+        for sub_agent_id in sub_agents_ids:
+            if sub_agent_id not in REGISTED_AGENTS:
+                raise ValueError(f"Agent ID '{sub_agent_id}' is not registered.")
+            sub_agent_config = getattr(config.agent, f"{sub_agent_id}_config")
+            
+            tool_ids = sub_agent_config.tools
+            tools = []
+            for tool_id in tool_ids:
+                if tool_id not in REGISTED_TOOLS:
+                    raise ValueError(f"Tool ID '{tool_id}' is not registered.")
+                tools.append(REGISTED_TOOLS[tool_id]())
+                
+            sub_agent = REGISTED_AGENTS[sub_agent_id](
+                config=sub_agent_config,
+                model=REGISTED_MODELS[sub_agent_config.model_id],
+                tools=tools,
+                max_steps=sub_agent_config.max_steps,
+                name=sub_agent_config.name,
+                description=sub_agent_config.description,
+                provide_run_summary=True,
             )
-        ],
-        max_steps=deep_analyzer_agent_config.max_steps,
-        name=deep_analyzer_agent_config.name,
-        description=deep_analyzer_agent_config.description,
-        provide_run_summary=True,
-    )
-
-    deep_researcher_agent_config = config.agent.deep_researcher_agent_config
-    deep_researcher_agent = DeepResearcherAgent(
-        config=deep_researcher_agent_config,
-        model=REGISTED_MODELS[deep_researcher_agent_config.model_id],
-        tools=[
-            DeepResearcherTool(
-                REGISTED_MODELS[deep_researcher_agent_config.model_id]
-            ),
-            PythonInterpreterTool(
-                authorized_imports=AUTHORIZED_IMPORTS
-            )
-        ],
-        max_steps=deep_researcher_agent_config.max_steps,
-        name=deep_researcher_agent_config.name,
-        description=deep_researcher_agent_config.description,
-        provide_run_summary=True,
-    )
-
-    browser_use_agent_config = config.agent.browser_use_agent_config
-    browser_use_agent = BrowserUseAgent(
-        config=browser_use_agent_config,
-        model=REGISTED_MODELS[browser_use_agent_config.model_id],
-        tools=[
-            AutoBrowserUseTool(),
-            PythonInterpreterTool(
-                authorized_imports=AUTHORIZED_IMPORTS
-            ),
-        ],
-        max_steps=browser_use_agent_config.max_steps,
-        name=browser_use_agent_config.name,
-        description=browser_use_agent_config.description,
-        provide_run_summary=True,
-    )
-
-    # Initialize planning agent
-    planning_agent_config = config.agent.planning_agent_config
-    agent = PlanningAgent(
-        config=planning_agent_config,
-        model=REGISTED_MODELS[planning_agent_config.model_id],
-        tools = [
-            PlanningTool(),
-        ],
-        max_steps=planning_agent_config.max_steps,
-        managed_agents=[
-            browser_use_agent,
-            deep_analyzer_agent,
-            deep_researcher_agent,
-        ],
-        description=planning_agent_config.description,
-        name=planning_agent_config.name,
-        provide_run_summary=True,
-    )
-
-    logger.info("Agent initialized.")
-
-    return agent
+            
+            sub_agents.append(sub_agent)
+        
+        tool_ids = planning_agent_config.tools
+        tools = []
+        for tool_id in tool_ids:
+            if tool_id not in REGISTED_TOOLS:
+                raise ValueError(f"Tool ID '{tool_id}' is not registered.")
+            tools.append(REGISTED_TOOLS[tool_id]())
+            
+        agent = REGISTED_AGENTS["planning_agent"](
+            config=planning_agent_config,
+            model=REGISTED_MODELS[planning_agent_config.model_id],
+            tools=tools,
+            max_steps=planning_agent_config.max_steps,
+            managed_agents=sub_agents,
+            description=planning_agent_config.description,
+            name=planning_agent_config.name,
+            provide_run_summary=True,
+        )
+        
+        return agent
+    
+    else:
+        deep_analyzer_agent_config = getattr(config.agent, "deep_analyzer_agent_config")
+        tools = []
+        for tool_id in deep_analyzer_agent_config.tools:
+            if tool_id not in REGISTED_TOOLS:
+                raise ValueError(f"Tool ID '{tool_id}' is not registered.")
+            tools.append(REGISTED_TOOLS[tool_id]())
+            
+        agent = REGISTED_AGENTS["deep_analyzer_agent"](
+            config=deep_analyzer_agent_config,
+            model=REGISTED_MODELS[deep_analyzer_agent_config.model_id],
+            tools=tools,
+            max_steps=deep_analyzer_agent_config.max_steps,
+            name=deep_analyzer_agent_config.name,
+            description=deep_analyzer_agent_config.description,
+            provide_run_summary=True,
+        )
+        
+        return agent

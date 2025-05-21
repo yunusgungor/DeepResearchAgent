@@ -15,11 +15,9 @@ if __name__ == "__main__":
     deep_analyzer = DeepAnalyzerTool()
 
     task = """
-    Please give the result of the following task:
-    2x + 3 = 11,
-    x = ?
+    Please analyze the attached file or uri and provide a detailed caption.
     """
 
-    response = asyncio.run(deep_analyzer.forward(task=task))
+    response = asyncio.run(deep_analyzer.forward(task=task, source="/Users/wentaozhang/workspace/RA/AgentScope/data/hle/images/test/6687ffb1091058ff19128813.png"))
     
     print(response)

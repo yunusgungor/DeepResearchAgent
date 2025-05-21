@@ -357,7 +357,7 @@ You have been provided with these additional arguments, that you can access usin
             if self.planning_interval is not None and (
                 self.step_number == 1 or (self.step_number - 1) % self.planning_interval == 0
             ):
-                planning_step = self._generate_planning_step(
+                planning_step = await self._generate_planning_step(
                     task, is_first_step=(self.step_number == 1), step=self.step_number
                 )
                 self.memory.steps.append(planning_step)
@@ -422,7 +422,7 @@ You have been provided with these additional arguments, that you can access usin
             )
         return final_answer
 
-    def _generate_planning_step(self, task, is_first_step: bool, step: int) -> PlanningStep:
+    async def _generate_planning_step(self, task, is_first_step: bool, step: int) -> PlanningStep:
         if is_first_step:
             input_messages = [
                 {
@@ -445,7 +445,7 @@ You have been provided with these additional arguments, that you can access usin
         else:
             # Summary mode removes the system prompt and previous planning messages output by the model.
             # Removing previous planning messages avoids influencing too much the new plan.
-            memory_messages = self.write_memory_to_messages(summary_mode=True)
+            memory_messages = await self.write_memory_to_messages(summary_mode=True)
             plan_update_pre = {
                 "role": MessageRole.SYSTEM,
                 "content": [
@@ -513,7 +513,7 @@ You have been provided with these additional arguments, that you can access usin
         """Interrupts the agent execution."""
         self.interrupt_switch = True
 
-    def write_memory_to_messages(
+    async def write_memory_to_messages(
         self,
         summary_mode: bool | None = False,
     ) -> list[Message]:
@@ -553,7 +553,7 @@ You have been provided with these additional arguments, that you can access usin
             )
         return rationale.strip(), action.strip()
 
-    def provide_final_answer(self, task: str, images: list["PIL.Image.Image"] | None = None) -> str:
+    async def provide_final_answer(self, task: str, images: list["PIL.Image.Image"] | None = None) -> str:
         """
         Provide the final answer to the task, based on the logs of the agent's interactions.
 
@@ -577,7 +577,7 @@ You have been provided with these additional arguments, that you can access usin
         ]
         if images:
             messages[0]["content"].append({"type": "image"})
-        messages += self.write_memory_to_messages()[1:]
+        messages += await self.write_memory_to_messages()[1:]
         messages += [
             {
                 "role": MessageRole.USER,
@@ -625,7 +625,7 @@ You have been provided with these additional arguments, that you can access usin
         )
         if self.provide_run_summary:
             answer += "\n\nFor more detail, find below a summary of this agent's work:\n<summary_of_work>\n"
-            for message in self.write_memory_to_messages(summary_mode=True):
+            for message in await self.write_memory_to_messages(summary_mode=True):
                 content = message["content"]
                 answer += "\n" + truncate_content(str(content)) + "\n---"
             answer += "\n</summary_of_work>"
@@ -809,7 +809,7 @@ You have been provided with these additional arguments, that you can access usin
         # Load tools
         tools = []
         for tool_info in agent_dict["tools"]:
-            tools.append(Tool.from_code(tool_info["code"]))
+            tools.append(AsyncTool.from_code(tool_info["code"]))
         # Load managed agents
         managed_agents = []
         for managed_agent_name, managed_agent_class_name in agent_dict["managed_agents"].items():

@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from typing_extensions import Literal
 
-
+from src.registry import register_tool
 from src.tools import AsyncTool, ToolResult
 from src.logger import logger
 
@@ -12,6 +12,7 @@ NOTE:
 - `create`: Create a new plan must include a unique plan_id.
 """
 
+@register_tool("planning")
 class PlanningTool(AsyncTool):
     """
     A tool that is used to plan tasks and manage plans.

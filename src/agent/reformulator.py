@@ -1,9 +1,10 @@
 import copy
 
 from src.models import MessageRole, Model
+from src.logger import logger
 
 
-def prepare_response(original_task: str, inner_messages, reformulation_model: Model) -> str:
+async def prepare_response(original_task: str, inner_messages, reformulation_model: Model) -> str:
     messages = [
         {
             "role": MessageRole.SYSTEM,
@@ -62,25 +63,10 @@ ADDITIONALLY, your FINAL ANSWER MUST adhere to any formatting instructions speci
         }
     )
 
-    response = reformulation_model(messages).content
+    response = await reformulation_model(messages)
+    response = response.content
 
     final_answer = response.split("FINAL ANSWER: ")[-1].strip()
-    print("> Reformulated answer: ", final_answer)
+    logger.info(f"> Reformulated answer: {final_answer}")
 
-    #     if "unable to determine" in final_answer.lower():
-    #         messages.append({"role": MessageRole.ASSISTANT, "content": response })
-    #         messages.append({"role": MessageRole.USER, "content": [{"type": "text", "text": """
-    # I understand that a definitive answer could not be determined. Please make a well-informed EDUCATED GUESS based on the conversation.
-
-    # To output the educated guess, use the following template: EDUCATED GUESS: [YOUR EDUCATED GUESS]
-    # Your EDUCATED GUESS should be a number OR as few words as possible OR a comma separated list of numbers and/or strings. DO NOT OUTPUT 'I don't know', 'Unable to determine', etc.
-    # ADDITIONALLY, your EDUCATED GUESS MUST adhere to any formatting instructions specified in the original question (e.g., alphabetization, sequencing, units, rounding, decimal places, etc.)
-    # If you are asked for a number, express it numerically (i.e., with digits rather than words), don't use commas, and don't include units such as $ or percent signs unless specified otherwise.
-    # If you are asked for a string, don't use articles or abbreviations (e.g. cit for cities), unless specified otherwise. Don't output any final sentence punctuation such as '.', '!', or '?'.
-    # If you are asked for a comma separated list, apply the above rules depending on whether the elements are numbers or strings.
-    # """.strip()}]})
-
-    #         response = model(messages).content
-    #         print("\n>>>Making an educated guess.\n", response)
-    #         final_answer = response.split("EDUCATED GUESS: ")[-1].strip()
     return final_answer

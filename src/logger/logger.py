@@ -35,8 +35,6 @@ class AgentLogger(logging.Logger, metaclass=Singleton):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-        self.is_main_process = True  # Default to True; will be updated in `init_logger`
-
     def init_logger(self, log_path: str, level=logging.INFO):
         """
         Initialize the logger with a file path and optional main process check.
