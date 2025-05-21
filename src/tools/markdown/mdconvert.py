@@ -35,10 +35,10 @@ def transcribe_audio(file_stream, audio_format):
     files = {'file': file_stream}
 
     headers = {
-        "app_key": os.getenv("SKYWORK_WHISPER_API_KEY"),
+        "app_key": os.getenv("SKYWORK_API_KEY"),
     }
 
-    proxy_url = os.getenv("SKYWORK_WHISPER_API_BASE")
+    proxy_url = os.getenv("SKYWORK_WHISPER_BJ_API_BASE")
 
     response = requests.post(proxy_url, headers=headers, files=files)
 
