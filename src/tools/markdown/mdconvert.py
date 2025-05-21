@@ -35,10 +35,10 @@ def transcribe_audio(file_stream, audio_format):
     files = {'file': file_stream}
 
     headers = {
-        "app_key": os.getenv("KUNLUN_WHISPER_API_KEY"),
+        "app_key": os.getenv("SKYWORK_WHISPER_API_KEY"),
     }
 
-    proxy_url = os.getenv("KUNLUN_WHISPER_API_BASE")
+    proxy_url = os.getenv("SKYWORK_WHISPER_API_BASE")
 
     response = requests.post(proxy_url, headers=headers, files=files)
 
@@ -188,17 +188,3 @@ class MarkitdownConverter():
         except Exception as e:
             logger.error(f"Error during conversion: {e}")
             return None
-
-if __name__ == '__main__':
-
-    file_path = "/Users/wentaozhang/workspace/RA/GenAgent2/data/GAIA/2023/validation/9b54f9d9-35ee-4a14-b62f-d130ea00317f.zip"
-
-    converter = MarkitdownConverter()
-    result = converter.convert(file_path)
-    if result:
-        print(result.text_content)
-    else:
-        print("Failed to convert the document.")
-
-    # text = transcribe_audio(open(file_path, "rb"), "mp3")
-    # print(text)
