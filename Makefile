@@ -26,6 +26,9 @@ install:
 	# install dependencies
 	poetry install
 
+	# install dependencies
+	pup install xlrd==2.0.1
+
 # 🛠️ Update dependencies using Poetry
 .PHONY: update
 update:
