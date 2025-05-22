@@ -36,6 +36,10 @@ The system adopts a two-layer structure:
 conda create -n dra python=3.11
 conda activate dra
 make install
+
+# If you encounter any issues with Playwright during installation, you can install it manually:
+pip install playwright
+playwright install chromium --with-deps --no-shell
 ```
 
 ### Put `.env` in the root
