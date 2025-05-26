@@ -28,6 +28,14 @@ The system adopts a two-layer structure:
 - Hierarchical agent collaboration for complex and dynamic task scenarios
 - Extensible agent system, allowing easy integration of additional specialized agents
 - Automated information analysis, research, and web interaction capabilities
+  
+
+## TODO List
+- [x] Asynchronous feature completed
+- [ ] Image Generation Agent to be developed
+- [ ] MCP in progress
+- [ ] AI4Research Agent to be developed
+- [ ] Novel Writing Agent to be developed
 
 ## Installation
 
