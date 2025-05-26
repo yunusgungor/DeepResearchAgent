@@ -16,6 +16,7 @@ clean:
 .PHONY: install
 install:
 	@echo "Installing dependencies"
+	pip install poetry
 	pip install 'markitdown[all]'
 	pip install "browser-use[memory]"
 
@@ -26,7 +27,23 @@ install:
 	# install dependencies
 	poetry install
 
+	# install xlrd
+	pip install xlrd==2.0.1
+
+install-requirements:
+	@echo "Installing dependencies"
+	pip install poetry
+	pip install 'markitdown[all]'
+	pip install "browser-use[memory]"
+
+	# install playwright
+	pip install playwright
+	playwright install chromium --with-deps --no-shell
+
 	# install dependencies
+	pip install -r requirements.txt
+
+	# install xlrd
 	pip install xlrd==2.0.1
 
 # 🛠️ Update dependencies using Poetry

@@ -33,9 +33,15 @@ The system adopts a two-layer structure:
 
 ### Prepare Environment
 ```
+# poetry install environment
 conda create -n dra python=3.11
 conda activate dra
 make install
+
+# (Optional) You can also use requirements.txt to setup the environment
+conda create -n dra python=3.11
+conda activate dra
+make install-requirements
 
 # If you encounter any issues with Playwright during installation, you can install it manually:
 pip install playwright

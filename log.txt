@@ -30,3 +30,5 @@
 [92m2025-05-22 12:12:35 - logger:ERROR[0m: error.py:10 - Error while generating output:
 Connection error.
 [92m2025-05-22 12:12:35 - logger:INFO[0m: logger.py:77 - [Step 1: Duration 1.33 seconds]
+[92m2025-05-26 13:49:15 - logger:INFO[0m: run_example.py:20 - Initializing logger: log.txt
+[92m2025-05-26 13:49:15 - logger:INFO[0m: run_example.py:23 - Registed models: gpt-4o, gpt-4.1, o1, o3, whisper, claude37-sonnet, gemini-2.5-pro, gpt-4o-search-preview, claude37-sonnet-thinking
