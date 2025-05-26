@@ -17,7 +17,8 @@ from src.exception import (
 )
 from src.base.async_multistep_agent import (PromptTemplates,
                                             populate_template,
-                                            AsyncMultiStepAgent)
+                                            AsyncMultiStepAgent
+                                            )
 from src.memory import (ActionStep,
                         ToolCall,
                         AgentMemory)
