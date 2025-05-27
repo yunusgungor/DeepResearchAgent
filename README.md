@@ -139,3 +139,23 @@ Contributions and suggestions are welcome! Feel free to open issues or submit pu
   year =         {2025}
 }
 ```
+
+## Questions
+
+### 1. About Qwen models
+Our project is based on the vllm startup qwen model, so that you can call the local model just by providing api_base, just like the model of openai. 
+Details about start qwen model through vllm: https://docs.vllm.ai/en/latest/getting_started/quickstart.html#openai-completions-api-with-vllm
+```
+
+# start your service
+pip install vllm
+vllm serve Qwen/Qwen2.5-1.5B-Instruct
+
+# put api_base to .env
+QWEN_API_BASE=http://localhost:8000/v1
+QWEN_API_KEY="no need, abcabcabc will be ok"
+
+# Configure your config file to use qwen's model
+model_id = "qwen"
+
+```

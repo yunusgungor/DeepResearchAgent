@@ -3,6 +3,7 @@ from openai import OpenAI
 from typing import Dict, Any, Tuple
 
 from dotenv import load_dotenv
+from pandas import api
 load_dotenv(verbose=True)
 from src.logger import logger
 from src.models.litellm import LiteLLMModel
@@ -22,6 +23,7 @@ class ModelManager(metaclass=Singleton):
         self._register_openai_models(use_local_proxy=use_local_proxy)
         self._register_anthropic_models(use_local_proxy=use_local_proxy)
         self._register_google_models(use_local_proxy=use_local_proxy)
+        self._register_qwen_models(use_local_proxy=use_local_proxy)
     
     def _check_local_api_key(self, local_api_key_name: str, remote_api_key_name: str) -> str:
         api_key = os.getenv(local_api_key_name, PLACEHOLDER)
@@ -281,3 +283,31 @@ class ModelManager(metaclass=Singleton):
                     custom_role_conversions=custom_role_conversions,
                 )
                 self.registed_models[model_name] = model
+                
+    def _register_qwen_models(self, use_local_proxy: bool = False):
+        # qwen
+        api_key = self._check_local_api_key(local_api_key_name="QWEN_API_BASE", 
+                                                remote_api_key_name="QWEN_API_BASE")
+        api_base = self._check_local_api_base(local_api_base_name="QWEN_API_KEY", 
+                                                    remote_api_base_name="QWEN_API_KEY")
+        models = [
+            {
+                "model_name": "qwen",
+                "model_id": "qwen",
+            }
+        ]
+        for model in models:
+            model_name = model["model_name"]
+            model_id = model["model_id"]
+            
+            client = OpenAI(
+                api_key=api_key,
+                base_url=api_base,
+            )
+            
+            model = OpenAIServerModel(
+                model_id=model_id,
+                http_client=client,
+                custom_role_conversions=custom_role_conversions,
+            )
+            self.registed_models[model_name] = model
