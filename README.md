@@ -160,7 +160,7 @@ QWEN_API_KEY="no need, abcabcabc will be ok"
 model_id = "qwen"
 ```
 
-### About browser use
+### 2. About browser use
 If you are having problems with your browser, please reinstall the browser tool.
 ```
 pip install "browser-use[memory]"==0.1.47
