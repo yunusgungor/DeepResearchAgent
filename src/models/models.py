@@ -277,7 +277,7 @@ class ModelManager(metaclass=Singleton):
                 model = LiteLLMModel(
                     model_id=model_id,
                     api_key=api_key,
-                    api_base=api_base,
+                    # api_base=api_base,
                     custom_role_conversions=custom_role_conversions,
                 )
                 self.registed_models[model_name] = model

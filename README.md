@@ -71,8 +71,20 @@ OPENAI_API_BASE=https://api.openai.com/v1
 OPENAI_API_KEY=abcabcabc # your openai api key
 ANTHROPIC_API_BASE=https://api.anthropic.com
 ANTHROPIC_API_KEY=abcabcabc # your anthropic api key
+GOOGLE_APPLICATION_CREDENTIALS=/your/user/path/.config/gcloud/application_default_credentials.json
 GOOGLE_API_BASE=https://generativelanguage.googleapis.com
 GOOGLE_API_KEY=abcabcabc # your google api key
+```
+
+```
+Note: Maybe you have some problems using google api, here is the reference
+1. Get api key from https://aistudio.google.com/app/apikey
+
+2. Get `application_default_credentials.json`. Here is the reference: https://cloud.google.com/docs/authentication/application-default-credentials?hl=zh-cn
+# Creating a Google API key requires it to be linked to a project, but the project may also need Vertex AI authorization, so it is necessary to obtain the appropriate credentials.
+brew install --cask google-cloud-sdk
+gcloud init
+gcloud auth application-default login
 ```
 
 ## Usage
