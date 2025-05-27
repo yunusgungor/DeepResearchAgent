@@ -16,7 +16,7 @@ sys.path.append(root)
 
 from src.logger import logger
 from src.config import config
-from src.registry import REGISTED_MODELS
+from src.models import model_manager
 from src.agent import create_agent, prepare_response
 from src.dataset import HLEDataset
 from src.utils import assemble_project_path
@@ -120,7 +120,8 @@ async def main():
     logger.info(f"Load config: {config}")
 
     # Registed models
-    logger.info("Registed models: %s", ", ".join(REGISTED_MODELS.keys()))
+    model_manager.init_models(use_local_proxy=config.use_local_proxy)
+    logger.info("Registed models: %s", ", ".join(model_manager.registed_models.keys()))
     
     # Load dataset
     dataset = HLEDataset(
