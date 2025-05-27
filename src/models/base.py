@@ -22,7 +22,6 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from src.tools import Tool
 from src.utils import (_is_package_available,
                        encode_image_base64,
                        make_image_url,
@@ -155,7 +154,7 @@ tool_role_conversions = {
 }
 
 
-def get_tool_json_schema(tool: Tool) -> Dict:
+def get_tool_json_schema(tool: Any) -> Dict:
     properties = deepcopy(tool.inputs)
     required = []
     for key, value in properties.items():
@@ -302,7 +301,7 @@ class Model:
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         custom_role_conversions: dict[str, str] | None = None,
         convert_images_to_image_urls: bool = False,
         **kwargs,
@@ -362,7 +361,7 @@ class Model:
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
         """Process the input messages and return the model's response.
@@ -374,7 +373,7 @@ class Model:
                 A list of strings that will stop the generation if encountered in the model's output.
             grammar (`str`, *optional*):
                 The grammar or formatting structure to use in the model's response.
-            tools_to_call_from (`List[Tool]`, *optional*):
+            tools_to_call_from (`List[Any]`, *optional*):
                 A list of tools that the model can use to generate responses.
             **kwargs:
                 Additional keyword arguments to be passed to the underlying model.
@@ -485,7 +484,7 @@ class VLLMModel(Model):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
         from vllm import SamplingParams
@@ -607,7 +606,7 @@ class MLXModel(Model):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
         completion_kwargs = self._prepare_completion_kwargs(
@@ -774,7 +773,7 @@ class TransformersModel(Model):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
         completion_kwargs = self._prepare_completion_kwargs(
@@ -967,7 +966,7 @@ class LiteLLMModel(ApiModel):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
         completion_kwargs = self._prepare_completion_kwargs(
@@ -1085,7 +1084,7 @@ class InferenceClientModel(ApiModel):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
         completion_kwargs = self._prepare_completion_kwargs(
@@ -1180,7 +1179,7 @@ class OpenAIServerModel(ApiModel):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
         completion_kwargs = self._prepare_completion_kwargs(
@@ -1356,7 +1355,7 @@ class AmazonBedrockServerModel(ApiModel):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         custom_role_conversions: dict[str, str] | None = None,
         convert_images_to_image_urls: bool = False,
         **kwargs,
@@ -1407,7 +1406,7 @@ class AmazonBedrockServerModel(ApiModel):
     def __call__(
         self,
         messages: List[Dict[str, str]],
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
         completion_kwargs: Dict = self._prepare_completion_kwargs(

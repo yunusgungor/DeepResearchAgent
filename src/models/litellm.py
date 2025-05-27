@@ -1,11 +1,10 @@
 import warnings
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from src.models.base import (ApiModel,
                              ChatMessage,
                              tool_role_conversions,
                              )
-from src.tools import Tool
 from src.models.message_manager import (
     MessageManager
 )
@@ -82,7 +81,7 @@ class LiteLLMModel(ApiModel):
             messages: List[Dict[str, str]],
             stop_sequences: Optional[List[str]] = None,
             grammar: Optional[str] = None,
-            tools_to_call_from: Optional[List[Tool]] = None,
+            tools_to_call_from: Optional[List[Any]] = None,
             custom_role_conversions: Optional[Dict[str, str]] = None,
             convert_images_to_image_urls: bool = False,
             http_client=None,
@@ -132,8 +131,9 @@ class LiteLLMModel(ApiModel):
 
         # Finally, use the passed-in kwargs to override all settings
         completion_kwargs.update(kwargs)
-
-        completion_kwargs['client'] = http_client
+        
+        if http_client:
+            completion_kwargs['client'] = http_client
 
         completion_kwargs = self.message_manager.get_clean_completion_kwargs(completion_kwargs)
 
@@ -144,7 +144,7 @@ class LiteLLMModel(ApiModel):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
 

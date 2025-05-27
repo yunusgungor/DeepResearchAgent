@@ -1,6 +1,7 @@
 from src.config import config
 from src.logger import logger
-from src.registry import REGISTED_AGENTS, REGISTED_TOOLS, REGISTED_MODELS
+from src.registry import REGISTED_AGENTS, REGISTED_TOOLS
+from src.models import model_manager
 
 AUTHORIZED_IMPORTS = [
     "pandas",
@@ -29,7 +30,7 @@ def create_agent():
                 
             sub_agent = REGISTED_AGENTS[sub_agent_id](
                 config=sub_agent_config,
-                model=REGISTED_MODELS[sub_agent_config.model_id],
+                model=model_manager.registed_models[sub_agent_config.model_id],
                 tools=tools,
                 max_steps=sub_agent_config.max_steps,
                 name=sub_agent_config.name,
@@ -48,7 +49,7 @@ def create_agent():
             
         agent = REGISTED_AGENTS["planning_agent"](
             config=planning_agent_config,
-            model=REGISTED_MODELS[planning_agent_config.model_id],
+            model=model_manager.registed_models[planning_agent_config.model_id],
             tools=tools,
             max_steps=planning_agent_config.max_steps,
             managed_agents=sub_agents,
@@ -69,7 +70,7 @@ def create_agent():
             
         agent = REGISTED_AGENTS["deep_analyzer_agent"](
             config=deep_analyzer_agent_config,
-            model=REGISTED_MODELS[deep_analyzer_agent_config.model_id],
+            model=model_manager.registed_models[deep_analyzer_agent_config.model_id],
             tools=tools,
             max_steps=deep_analyzer_agent_config.max_steps,
             name=deep_analyzer_agent_config.name,

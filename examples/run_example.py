@@ -10,23 +10,26 @@ sys.path.append(root)
 
 from src.logger import logger
 from src.config import config
-from src.registry import REGISTED_MODELS
+from src.models import model_manager
 from src.agent import create_agent
+from src.utils import assemble_project_path
 
 async def main():
-    # Init logger
-    log_path = config.log_path
-    logger.init_logger(log_path)
-    logger.info(f"Initializing logger: {log_path}")
+    # Init config and logger
+    config.init_config(config_path=assemble_project_path("configs/config_example.toml"))
+    logger.init_logger(config.log_path)
+    logger.info(f"Initializing logger: {config.log_path}")
+    logger.info(f"Load config: {config}")
 
     # Registed models
-    logger.info("Registed models: %s", ", ".join(REGISTED_MODELS.keys()))
+    model_manager.init_models(use_local_proxy=True)
+    logger.info("Registed models: %s", ", ".join(model_manager.registed_models.keys()))
     
     # Create agent
     agent = create_agent()
 
     # Run example
-    task = "Search for the latest research paper on the topic of 'AI Agent' and summarize it."
+    task = "Use deep_researcher_agent to search the latest papers on the topic of 'AI Agent' and then summarize it."
     res = await agent.run(task)
     logger.info(f"Result: {res}")
 

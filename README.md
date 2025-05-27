@@ -30,6 +30,10 @@ The system adopts a two-layer structure:
 - Automated information analysis, research, and web interaction capabilities
   
 
+## Updates
+- 2025.05.27
+  - Updated the available remote API calls to support OpenAI, Anthropic, and Google LLMs.
+
 ## TODO List
 - [x] Asynchronous feature completed
 - [ ] Image Generation Agent to be developed
@@ -63,21 +67,13 @@ playwright install chromium --with-deps --no-shell
 PYTHONWARNINGS=ignore # ignore warnings
 ANONYMIZED_TELEMETRY=false # disable telemetry
 HUGGINEFACE_API_KEY=abcabcabc # your huggingface api key
-OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_API_BASE=https://api.openai.com/v1
 OPENAI_API_KEY=abcabcabc # your openai api key
-
-# (Optional) Local proxy. If you are using a private proxy, please refer to the configuration guide as follows:
-LOCAL_PROXY_BASE=http://localhost:6655
-SKYWORK_API_BASE=abcabcabs
-SKYWORK_OPENROUTER_BJ_API_BASE=abcabcabs
-SKYWORK_OPENROUTER_US_API_BASE=abcabcabs
-SKYWORK_AZURE_HK_API_BASE=abcabcabs
-SKYWORK_WHISPER_BJ_API_BASE=abcabcabs
-SKYWORK_GOOGLE_API_BASE=abcabcabs
-SKYWORK_API_KEY=abcabcabs
-SKYWORK_GOOGLE_SEARCH_API=abcabcabs
+ANTHROPIC_API_BASE=https://api.anthropic.com
+ANTHROPIC_API_KEY=abcabcabc # your anthropic api key
+GOOGLE_API_BASE=https://generativelanguage.googleapis.com
+GOOGLE_API_KEY=abcabcabc # your google api key
 ```
-
 
 ## Usage
 

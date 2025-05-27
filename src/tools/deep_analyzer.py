@@ -2,12 +2,13 @@ import os
 from typing import Optional, Dict, Any
 from PIL import Image
 
-from src.registry import REGISTED_MODELS
 from src.tools import AsyncTool, ToolResult
-from src.models import MessageRole
+from src.models import model_manager
+from src.models.base import MessageRole
 from src.tools.markdown.mdconvert import MarkitdownConverter
 from src.logger import logger
 from src.registry import register_tool
+from src.config import config
 
 
 _DEEP_ANALYZER_DESCRIPTION = """A tool that performs systematic, step-by-step analysis or calculation of a given task, optionally leveraging information from external resources such as attached file or uri to provide comprehensive reasoning and answers.
@@ -54,15 +55,17 @@ class DeepAnalyzerTool(AsyncTool):
         "additionalProperties": False,
     }
     output_type = "any"
+    
+    analyzer_config = config.deep_analyzer_tool
 
     def __init__(self):
         super().__init__()
 
         self.analyzer_models = {
-            'gemini-2.5-pro': REGISTED_MODELS['gemini-2.5-pro'],
-            # 'o3': REGISTED_MODELS['o3'],
+            model_id: model_manager.registed_models[model_id]
+            for model_id in self.analyzer_config.analyzer_model_ids
         }
-        self.summary_model = REGISTED_MODELS['gemini-2.5-pro']
+        self.summary_model = model_manager.registed_models[self.analyzer_config.summarizer_model_id]
 
         self.converter: MarkitdownConverter = MarkitdownConverter(
             use_llm=False,

@@ -6,7 +6,10 @@ from src.models.base import (
                             )
 from src.models.litellm import LiteLLMModel
 from src.models.openaillm import OpenAIServerModel
-from src.models.models import *
+from src.models.models import ModelManager
+
+
+model_manager = ModelManager()
 
 __all__ = [
     "Model",
@@ -14,5 +17,7 @@ __all__ = [
     "ChatMessage",
     "MessageRole",
     "OpenAIServerModel",
-    "parse_json_if_needed"
+    "parse_json_if_needed",
+    "model_manager",
+    "ModelManager",
 ]

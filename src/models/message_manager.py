@@ -2,7 +2,6 @@ from typing import Dict, List, Optional, Any
 from copy import deepcopy
 
 from src.models.base import MessageRole
-from src.tools import Tool
 from src.utils import encode_image_base64, make_image_url
 
 DEFAULT_ANTHROPIC_MODELS = [
@@ -96,7 +95,7 @@ class MessageManager():
         return output_message_list
 
     def get_tool_json_schema(self,
-                             tool: Tool,
+                             tool: Any,
                              model_id: Optional[str] = None
                              ) -> Dict:
         properties = deepcopy(tool.parameters['properties'])

@@ -87,7 +87,7 @@ class AutoBrowserUseTool(AsyncTool):
             model = ChatOpenAI(
                 model=model_id,
                 api_key=os.getenv("OPENAI_API_KEY"),
-                base_url=os.getenv("OPENAI_BASE_URL"),
+                base_url=os.getenv("OPENAI_API_BASE"),
             )
 
         browser_agent = Agent(
@@ -101,7 +101,12 @@ class AutoBrowserUseTool(AsyncTool):
         return browser_agent
 
     async def _browser_task(self, task):
-        with proxy_env(PROXY_URL):
+        if config.use_local_proxy:
+            with proxy_env(PROXY_URL):
+                self.browser_agent.add_new_task(task)
+                history = await self.browser_agent.run(max_steps=50)
+                contents = history.extracted_content()
+        else:
             self.browser_agent.add_new_task(task)
             history = await self.browser_agent.run(max_steps=50)
             contents = history.extracted_content()

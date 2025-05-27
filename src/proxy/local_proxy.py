@@ -6,12 +6,16 @@ from dotenv import load_dotenv
 
 load_dotenv(verbose=True)
 
-PROXY_URL = os.getenv('LOCAL_PROXY_BASE') # http://localhost:6655
-TRANSPORT = httpx.HTTPTransport(proxy=httpx.Proxy(url=PROXY_URL))
-HTTP_CLIENT = httpx.Client(transport=TRANSPORT)
+PROXY_URL = os.getenv('LOCAL_PROXY_BASE', None)
 
-ASYNC_TRANSPORT = httpx.AsyncHTTPTransport(proxy=httpx.Proxy(url=PROXY_URL))
-ASYNC_HTTP_CLIENT = httpx.AsyncClient(transport=ASYNC_TRANSPORT)
+if PROXY_URL:
+    TRANSPORT = httpx.HTTPTransport(proxy=httpx.Proxy(url=PROXY_URL))
+    HTTP_CLIENT = httpx.Client(transport=TRANSPORT)
+    ASYNC_TRANSPORT = httpx.AsyncHTTPTransport(proxy=httpx.Proxy(url=PROXY_URL))
+    ASYNC_HTTP_CLIENT = httpx.AsyncClient(transport=ASYNC_TRANSPORT)
+else:
+    HTTP_CLIENT = httpx.Client()
+    ASYNC_HTTP_CLIENT = httpx.AsyncClient()
 
 @contextlib.contextmanager
 def proxy_env(proxy_url: str = PROXY_URL):

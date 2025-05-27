@@ -6,7 +6,6 @@ from src.models.base import (ApiModel,
                              ChatMessage,
                              tool_role_conversions,
                              MessageRole)
-from src.tools import Tool
 from src.models.message_manager import MessageManager
 
 class OpenAIServerModel(ApiModel):
@@ -86,7 +85,7 @@ class OpenAIServerModel(ApiModel):
             messages: List[Dict[str, str]],
             stop_sequences: Optional[List[str]] = None,
             grammar: Optional[str] = None,
-            tools_to_call_from: Optional[List[Tool]] = None,
+            tools_to_call_from: Optional[List[Any]] = None,
             custom_role_conversions: dict[str, str] | None = None,
             convert_images_to_image_urls: bool = False,
             timeout: Optional[int] = 300,
@@ -145,7 +144,7 @@ class OpenAIServerModel(ApiModel):
         messages: List[Dict[str, str]],
         stop_sequences: Optional[List[str]] = None,
         grammar: Optional[str] = None,
-        tools_to_call_from: Optional[List[Tool]] = None,
+        tools_to_call_from: Optional[List[Any]] = None,
         **kwargs,
     ) -> ChatMessage:
 

@@ -10,9 +10,11 @@ root = str(Path(__file__).resolve().parents[1])
 sys.path.append(root)
 
 from src.tools.web_searcher import WebSearcherTool
-
+from src.models import model_manager
 
 if __name__ == "__main__":
+    model_manager.init_models(use_local_proxy=False)
+    
     web_search = WebSearcherTool()
     web_search.fetch_content = True
 

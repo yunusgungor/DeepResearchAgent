@@ -17,8 +17,10 @@ from markitdown._base_converter import DocumentConverterResult
 from markitdown._exceptions import MissingDependencyException, MISSING_DEPENDENCY_MESSAGE
 import pdfminer
 import pdfminer.high_level
-from src.models import REGISTED_MODELS
+from src.models import model_manager
 from src.logger import logger
+from src.proxy import PROXY_URL, proxy_env
+from litellm import transcription
 
 def read_tables_from_stream(file_stream):
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as temp_pdf:
@@ -28,22 +30,16 @@ def read_tables_from_stream(file_stream):
         return tables
 
 def transcribe_audio(file_stream, audio_format):
-    PROXY_URL = os.getenv('LOCAL_PROXY_BASE')
-    os.environ["HTTP_PROXY"] = PROXY_URL
-    os.environ["HTTPS_PROXY"] = PROXY_URL
-
-    files = {'file': file_stream}
-
-    headers = {
-        "app_key": os.getenv("SKYWORK_API_KEY"),
-    }
-
-    proxy_url = os.getenv("SKYWORK_WHISPER_BJ_API_BASE")
-
-    response = requests.post(proxy_url, headers=headers, files=files)
-
-    del os.environ["HTTP_PROXY"]
-    del os.environ["HTTPS_PROXY"]
+    proxy_url = os.getenv("SKYWORK_WHISPER_BJ_API_BASE", None)
+    if proxy_url is not None:
+        with proxy_env(proxy_url):
+            files = {'file': file_stream}
+            headers = {
+                "app_key": os.getenv("SKYWORK_API_KEY"),
+            }
+            response = requests.post(proxy_url, headers=headers, files=files)
+    else:
+        response = transcription(model="gpt-4o-transcribe", file=file_stream)
 
     return response.json()['text']
 
@@ -157,7 +153,7 @@ class MarkitdownConverter():
         self.model_id = model_id
 
         if use_llm:
-            client = REGISTED_MODELS[model_id].http_client
+            client = model_manager.registed_models(model_id).http_client
             self.client = MarkItDown(
                 enable_plugins=True,
                 llm_client=client,
