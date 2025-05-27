@@ -286,10 +286,10 @@ class ModelManager(metaclass=Singleton):
                 
     def _register_qwen_models(self, use_local_proxy: bool = False):
         # qwen
-        api_key = self._check_local_api_key(local_api_key_name="QWEN_API_BASE", 
-                                                remote_api_key_name="QWEN_API_BASE")
-        api_base = self._check_local_api_base(local_api_base_name="QWEN_API_KEY", 
-                                                    remote_api_base_name="QWEN_API_KEY")
+        api_key = self._check_local_api_key(local_api_key_name="QWEN_API_KEY", 
+                                                remote_api_key_name="QWEN_API_KEY")
+        api_base = self._check_local_api_base(local_api_base_name="QWEN_API_BASE", 
+                                                    remote_api_base_name="QWEN_API_BASE")
         models = [
             {
                 "model_name": "qwen",
