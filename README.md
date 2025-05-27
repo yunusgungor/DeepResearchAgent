@@ -33,6 +33,7 @@ The system adopts a two-layer structure:
 ## Updates
 - 2025.05.27
   - Updated the available remote API calls to support OpenAI, Anthropic, and Google LLMs.
+  - Added support for local Qwen models (via vllm, compatible with OpenAI API format, see details at the end of README)
 
 ## TODO List
 - [x] Asynchronous feature completed
@@ -157,5 +158,4 @@ QWEN_API_KEY="no need, abcabcabc will be ok"
 
 # Configure your config file to use qwen's model
 model_id = "qwen"
-
 ```
