@@ -13,7 +13,7 @@ from src.models import model_manager
 from src.tools.deep_analyzer import DeepAnalyzerTool
 
 if __name__ == "__main__":
-    model_manager.init_models(use_local_proxy=False)
+    model_manager.init_models(use_local_proxy=True)
     
     deep_analyzer = DeepAnalyzerTool()
 
