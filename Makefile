@@ -18,7 +18,7 @@ install:
 	@echo "Installing dependencies"
 	pip install poetry
 	pip install 'markitdown[all]'
-	pip install "browser-use[memory]"
+	pip install "browser-use[memory]"==0.1.47
 
 	# install playwright
 	pip install playwright
@@ -34,7 +34,7 @@ install-requirements:
 	@echo "Installing dependencies"
 	pip install poetry
 	pip install 'markitdown[all]'
-	pip install "browser-use[memory]"
+	pip install "browser-use[memory]"==0.1.47
 
 	# install playwright
 	pip install playwright

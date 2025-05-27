@@ -111,7 +111,7 @@ class Config(BaseModel):
     concurrency: int = 4
     log_path: str = 'log.txt'
     download_path: str = 'downloads_folder'
-    use_local_proxy: bool = Field(default=True, description="Whether to use local proxy")
+    use_local_proxy: bool = Field(default=False, description="Whether to use local proxy")
     split: str = Field(default="validation", description="Set name")
     save_path: str = Field(default="agentscope.jsonl", description="Path to save the answers")
     

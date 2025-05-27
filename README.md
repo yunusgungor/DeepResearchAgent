@@ -159,3 +159,13 @@ QWEN_API_KEY="no need, abcabcabc will be ok"
 # Configure your config file to use qwen's model
 model_id = "qwen"
 ```
+
+### About browser use
+If you are having problems with your browser, please reinstall the browser tool.
+```
+pip install "browser-use[memory]"==0.1.47
+
+# install playwright
+pip install playwright
+playwright install chromium --with-deps --no-shell
+```
