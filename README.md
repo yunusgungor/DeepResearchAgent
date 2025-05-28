@@ -169,3 +169,6 @@ pip install "browser-use[memory]"==0.1.47
 pip install playwright
 playwright install chromium --with-deps --no-shell
 ```
+
+### 3. About calling for sub agents
+I’ve found that both OpenAI and Google models are strictly trained for function calling, which means they no longer use JSON outputs to invoke sub-agents. Therefore, I recommend using Claude-3.7-Sonnet as the planning agent whenever possible. That said, I will fix this issue soon by providing the sub-agents to the planning agent via function calling.
