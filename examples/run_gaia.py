@@ -98,7 +98,7 @@ async def answer_single_question(example, answers_file):
 
         agent_memory = agent.write_memory_to_messages(summary_mode=True)
 
-        final_result = prepare_response(question, agent_memory, reformulation_model=REGISTED_MODELS["o3"])
+        final_result = prepare_response(question, agent_memory, reformulation_model=model_manager.registed_models["o3"])
 
         output = str(final_result)
         for memory_step in agent.memory.steps:

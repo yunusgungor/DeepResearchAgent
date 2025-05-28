@@ -566,7 +566,7 @@ class DeepResearcherTool(AsyncTool):
         return insights
 
     async def _summary(self, query: str, reference_materials: str) -> str:
-        model = REGISTED_MODELS["gpt-4o-search-preview"]
+        model = model_manager.registed_models["gpt-4o-search-preview"]
 
         messages = [
             {"role": "user", "content": query}
