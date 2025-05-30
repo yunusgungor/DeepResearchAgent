@@ -6,7 +6,7 @@ DeepResearchAgent is a hierarchical multi-agent system designed not only for dee
 
 ## Architecture
 
-The system adopts [Makefile](Makefile)a two-layer structure:
+The system adopts a two-layer structure:
 
 ### 1. Top-Level Planning Agent
 - Responsible for understanding, decomposing, and planning the overall workflow for a given task.
