@@ -10,7 +10,6 @@ root = str(Path(__file__).resolve().parents[1])
 sys.path.append(root)
 
 from src.models import model_manager
-from src.tools.deep_analyzer import DeepAnalyzerTool
 
 if __name__ == "__main__":
     model_manager.init_models(use_local_proxy=False)
@@ -22,7 +21,7 @@ if __name__ == "__main__":
         }
     ]
     
-    response = asyncio.run(model_manager.registed_models["claude37-sonnet-thinking"](
+    response = asyncio.run(model_manager.registed_models["qwen2.5-7b-instruct"](
         messages=messages,
     ))
     print(response)
