@@ -37,6 +37,8 @@ class AutoBrowserUseTool(AsyncTool):
     def __init__(self):
         super(AutoBrowserUseTool, self).__init__()
 
+        self.browser_tool_config = config.browser_tool
+
         self.http_server_path = assemble_project_path("src/tools/browser/http_server")
         self.http_save_path = assemble_project_path("src/tools/browser/http_server/local")
         os.makedirs(self.http_save_path, exist_ok=True)
@@ -76,14 +78,14 @@ class AutoBrowserUseTool(AsyncTool):
         controller = Controller(http_save_path=self.http_save_path)
 
         if config.use_local_proxy:
-            model_id = "gpt-4.1"
+            model_id = self.browser_tool_config.model_id
             model = ChatOpenAI(
                 model=model_id,
                 api_key=os.getenv("SKYWORK_API_KEY"),
                 base_url=os.getenv("SKYWORK_API_BASE"),
             )
         else:
-            model_id = "gpt-4.1"
+            model_id = self.browser_tool_config.model_id
             model = ChatOpenAI(
                 model=model_id,
                 api_key=os.getenv("OPENAI_API_KEY"),

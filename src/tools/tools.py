@@ -122,7 +122,10 @@ class ToolResult(BaseModel):
         )
 
     def __str__(self):
-        return f"Error: {self.error}" if self.error else self.output
+        return f"Error: {self.error}" if self.error else str(self.output)
+
+    def __repr__(self):
+        return self.__str__()
 
     def replace(self, **kwargs):
         """Returns a new ToolResult with the given fields replaced."""

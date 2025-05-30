@@ -32,7 +32,7 @@ class AgentLogger(logging.Logger, metaclass=Singleton):
         # Define a formatter for log messages
         self.formatter = logging.Formatter(
             fmt="\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+            datefmt="%H:%M:%S",
         )
 
     def init_logger(self, log_path: str, level=logging.INFO):

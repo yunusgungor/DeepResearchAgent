@@ -48,11 +48,12 @@ class WebFetcherTool(AsyncTool):
     }
     output_type = "any"
 
-    converter = MarkitdownConverter(
-        use_llm=False,
-        model_id="gpt-4.1",
-        timeout=30,
-    )
+    def __init(self):
+        self.converter = MarkitdownConverter(
+            use_llm=False,
+            model_id="gpt-4.1",
+            timeout=30,
+        )
 
     async def forward(self, url: str) -> Optional[DocumentConverterResult]:
         """Fetch content from a given URL."""

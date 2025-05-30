@@ -28,6 +28,7 @@ class DeepResearcherToolConfig(BaseModel):
     max_follow_ups: int = Field(default=3, description="Maximum number of follow-up questions to ask")
 
 class BrowserToolConfig(BaseModel):
+    model_id: str = Field(default="claude37-sonnet-thinking", description="Model ID for the LLM to use")
     headless: bool = Field(False, description="Whether to run browser in headless mode")
     disable_security: bool = Field(True, description="Disable browser security features")
     extra_chromium_args: List[str] = Field(default_factory=list, description="Extra arguments to pass to the browser")

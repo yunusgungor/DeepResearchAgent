@@ -117,49 +117,51 @@ class WebSearcherTool(AsyncTool):
     }
     output_type = 'any'
 
-    searcher_config = config.searcher_tool
-    _search_engine: dict[str, WebSearchEngine] = {
-        "google": GoogleSearchEngine()
-    }
-    max_length: int = (
-        getattr(searcher_config, "max_length", 20000)
-        if searcher_config
-        else 20000
-    )
-    # Get settings from config
-    retry_delay = (
-        getattr(searcher_config, "retry_delay", 10)
-        if searcher_config
-        else 10
-    )
-    max_retries = (
-        getattr(searcher_config, "max_retries", 3)
-        if searcher_config
-        else 3
-    )
-    # Use config values for lang and country if not specified
-    lang = (
-        getattr(searcher_config, "lang", "en")
-        if searcher_config
-        else "en"
-        )
-    country = (
-        getattr(searcher_config, "country", "us")
-        if searcher_config
-        else "us"
-    )
-    num_results = (
-        getattr(searcher_config, "num_results", 5)
-        if searcher_config
-        else 5
-    )
-    fetch_content = (
-        getattr(searcher_config, "fetch_content", False)
-        if searcher_config
-        else False
-    )
+    def __init(self):
 
-    content_fetcher: WebFetcherTool = WebFetcherTool()
+        self.searcher_config = config.searcher_tool
+        _search_engine: dict[str, WebSearchEngine] = {
+            "google": GoogleSearchEngine()
+        }
+        self.smax_length: int = (
+            getattr(self.searcher_config, "max_length", 20000)
+            if self.searcher_config
+            else 20000
+        )
+        # Get settings from config
+        self.retry_delay = (
+            getattr(self.searcher_config, "retry_delay", 10)
+            if self.searcher_config
+            else 10
+        )
+        self.max_retries = (
+            getattr(self.searcher_config, "max_retries", 3)
+            if self.searcher_config
+            else 3
+        )
+        # Use config values for lang and country if not specified
+        self.lang = (
+            getattr(self.searcher_config, "lang", "en")
+            if self.searcher_config
+            else "en"
+        )
+        self.country = (
+            getattr(self.searcher_config, "country", "us")
+            if self.searcher_config
+            else "us"
+        )
+        self.num_results = (
+            getattr(self.searcher_config, "num_results", 5)
+            if self.searcher_config
+            else 5
+        )
+        self.fetch_content = (
+            getattr(self.searcher_config, "fetch_content", False)
+            if self.searcher_config
+            else False
+        )
+
+        self.content_fetcher: WebFetcherTool = WebFetcherTool()
 
     async def forward(
         self,
