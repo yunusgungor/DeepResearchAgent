@@ -28,6 +28,7 @@ from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
+from typing import Any, get_type_hints
 
 from huggingface_hub import (
     CommitOperationAdd,
@@ -1246,6 +1247,39 @@ def get_tools_definition_code(tools: Dict[str, Tool]) -> str:
     return tool_definition_code
 
 
+def make_tool_instance(agent):
+    agnet_name = agent.name
+    parameters = {
+        "type": "object",
+        "properties": {
+            "task": {
+                "type": "any",
+                "description": "The task to be executed by the team member.",
+            },
+        },
+        "required": ["task"],
+    }
+    output_type = "any"
+    async def forward(self, task: Any) -> ToolResult:
+        result = await agent.run(task)
+        return ToolResult(output=result, error=None)
+
+    tool_cls = type(
+        f"{agnet_name}",
+        (AsyncTool,),
+        {
+            "name": agnet_name,
+            "description": agent.description,
+            "parameters": parameters,
+            "output_type": output_type,
+            "forward": forward,
+        }
+    )
+
+    tool_instance = tool_cls()
+
+    return tool_instance
+
 __all__ = [
     "AUTHORIZED_TYPES",
     "Tool",
@@ -1254,4 +1288,5 @@ __all__ = [
     "load_tool",
     "launch_gradio_demo",
     "ToolCollection",
+    "make_tool_instance"
 ]

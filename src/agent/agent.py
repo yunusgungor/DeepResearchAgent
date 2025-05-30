@@ -1,48 +1,15 @@
-from typing import Any, get_type_hints
+
 
 from src.config import config
 from src.registry import REGISTED_AGENTS, REGISTED_TOOLS
 from src.models import model_manager
-from src.tools import AsyncTool, ToolResult
+from src.tools import make_tool_instance
 
 AUTHORIZED_IMPORTS = [
     "pandas",
     "requests",
     "numpy"
 ]
-
-def make_tool_instance(agent):
-    agnet_name = agent.name
-    parameters = {
-        "type": "object",
-        "properties": {
-            "task": {
-                "type": "any",
-                "description": "The task to be executed by the team member.",
-            },
-        },
-        "required": ["task"],
-    }
-    output_type = "any"
-    async def forward(self, task: Any) -> ToolResult:
-        result = await agent.run(task)
-        return ToolResult(output=result, error=None)
-
-    tool_cls = type(
-        f"{agnet_name}",
-        (AsyncTool,),
-        {
-            "name": agnet_name,
-            "description": agent.description,
-            "parameters": parameters,
-            "output_type": output_type,
-            "forward": forward,
-        }
-    )
-
-    tool_instance = tool_cls()
-
-    return tool_instance
 
 def create_agent():
     
