@@ -274,12 +274,6 @@ class PlanningAgent(AsyncMultiStepAgent):
                 self.state[observation_name] = observation
                 updated_information = f"Stored '{observation_name}' in memory."
             else:
-
-                print("*****")
-                print(type(observation))
-                print(observation)
-                print("*****")
-
                 updated_information = str(observation).strip()
             self.logger.log(
                 f"Observations: {updated_information.replace('[', '|')}",  # escape potential rich-tag-like components
