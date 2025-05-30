@@ -1,13 +1,48 @@
+from typing import Any, get_type_hints
+
 from src.config import config
-from src.logger import logger
 from src.registry import REGISTED_AGENTS, REGISTED_TOOLS
 from src.models import model_manager
+from src.tools import AsyncTool, ToolResult
 
 AUTHORIZED_IMPORTS = [
     "pandas",
     "requests",
     "numpy"
 ]
+
+def make_tool_instance(agent):
+    agnet_name = agent.name
+    parameters = {
+        "type": "object",
+        "properties": {
+            "task": {
+                "type": "any",
+                "description": "The task to be executed by the team member.",
+            },
+        },
+        "required": ["task"],
+    }
+    output_type = "any"
+    async def forward(self, task: Any) -> ToolResult:
+        result = await agent.run(task)
+        return ToolResult(output=result, error=None)
+
+    tool_cls = type(
+        f"{agnet_name}",
+        (AsyncTool,),
+        {
+            "name": agnet_name,
+            "description": agent.description,
+            "parameters": parameters,
+            "output_type": output_type,
+            "forward": forward,
+        }
+    )
+
+    tool_instance = tool_cls()
+
+    return tool_instance
 
 def create_agent():
     
@@ -39,6 +74,8 @@ def create_agent():
             )
             
             sub_agents.append(sub_agent)
+
+        sub_agent_tools = [make_tool_instance(agent) for agent in sub_agents]
         
         tool_ids = planning_agent_config.tools
         tools = []
@@ -46,13 +83,14 @@ def create_agent():
             if tool_id not in REGISTED_TOOLS:
                 raise ValueError(f"Tool ID '{tool_id}' is not registered.")
             tools.append(REGISTED_TOOLS[tool_id]())
+
+        tools = tools + sub_agent_tools
             
         agent = REGISTED_AGENTS["planning_agent"](
             config=planning_agent_config,
             model=model_manager.registed_models[planning_agent_config.model_id],
             tools=tools,
             max_steps=planning_agent_config.max_steps,
-            managed_agents=sub_agents,
             description=planning_agent_config.description,
             name=planning_agent_config.name,
             provide_run_summary=True,
