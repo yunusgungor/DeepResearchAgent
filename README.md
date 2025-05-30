@@ -163,4 +163,5 @@ playwright install chromium --with-deps --no-shell
 ```
 
 ### 3. About calling for sub agents
-I’ve found that both OpenAI and Google models are strictly trained for function calling, which means they no longer use JSON outputs to invoke sub-agents. Therefore, I recommend using Claude-3.7-Sonnet as the planning agent whenever possible. This issue has been fixed.
+I’ve found that both OpenAI and Google models are strictly trained for function calling, which means they no longer use JSON outputs to invoke sub-agents. Therefore, I recommend using Claude-3.7-Sonnet as the planning agent whenever possible. 
+This issue has been fixed. The planning agent can now call the sub-agents directly, so you can use gpt-4.1 or gemini-2.5-pro as the planning agent.
