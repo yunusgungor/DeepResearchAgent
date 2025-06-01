@@ -31,9 +31,9 @@ The system adopts a two-layer structure:
   
 
 ## Updates
-- 2025.05.30
- - Convert the sub agent to a function call, so that the planning agent can call the sub agents directly. Planning agent can now be gpt-4.1 or gemini-2.5-pro.
-- 2025.05.27
+* 2025.05.30
+  - Convert the sub agent to a function call, so that the planning agent can call the sub agents directly. Planning agent can now be gpt-4.1 or gemini-2.5-pro.
+* 2025.05.27
   - Updated the available remote API calls to support OpenAI, Anthropic, and Google LLMs.
   - Added support for local Qwen models (via vllm, compatible with OpenAI API format, see details at the end of README)
 
