@@ -2,7 +2,6 @@ from typing import Optional
 from markitdown._base_converter import DocumentConverterResult
 from crawl4ai import AsyncWebCrawler
 
-from src.config import config
 from src.tools.markdown.mdconvert import MarkitdownConverter
 from src.tools import AsyncTool
 from src.logger import logger

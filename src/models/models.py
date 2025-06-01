@@ -208,6 +208,22 @@ class ModelManager(metaclass=Singleton):
             )
             self.registed_models[model_name] = model
 
+            # claude-4-sonnet
+            model_name = "claude-4-sonnet"
+            model_id = "claude-4-sonnet"
+            client = OpenAI(
+                api_key=api_key,
+                base_url=self._check_local_api_base(local_api_base_name="SKYWORK_OPENROUTER_US_API_BASE",
+                                                    remote_api_base_name="ANTHROPIC_API_BASE"),
+                http_client=HTTP_CLIENT,
+            )
+            model = OpenAIServerModel(
+                model_id=model_id,
+                http_client=client,
+                custom_role_conversions=custom_role_conversions,
+            )
+            self.registed_models[model_name] = model
+
         else:
             logger.info("Using remote API for Anthropic models")
             api_key = self._check_local_api_key(local_api_key_name="ANTHROPIC_API_KEY", 

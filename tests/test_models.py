@@ -12,7 +12,7 @@ sys.path.append(root)
 from src.models import model_manager
 
 if __name__ == "__main__":
-    model_manager.init_models(use_local_proxy=False)
+    model_manager.init_models(use_local_proxy=True)
     
     messages = [
         {
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         }
     ]
     
-    response = asyncio.run(model_manager.registed_models["qwen2.5-7b-instruct"](
+    response = asyncio.run(model_manager.registed_models["claude-4-sonnet"](
         messages=messages,
     ))
     print(response)
