@@ -31,6 +31,8 @@ The system adopts a two-layer structure:
   
 
 ## Updates
+* 2025.06.01
+  - Update the browser-use to 0.1.48.
 * 2025.05.30
   - Convert the sub agent to a function call, so that the planning agent can call the sub agents directly. Planning agent can now be gpt-4.1 or gemini-2.5-pro.
 * 2025.05.27
@@ -155,7 +157,7 @@ model_id = "qwen2.5-7b-instruct"
 ### 2. About browser use
 If you are having problems with your browser, please reinstall the browser tool.
 ```
-pip install "browser-use[memory]"==0.1.47
+pip install "browser-use[memory]"==0.1.48
 
 # install playwright
 pip install playwright

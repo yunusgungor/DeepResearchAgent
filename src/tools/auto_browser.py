@@ -2,12 +2,11 @@ import os
 import subprocess
 import atexit
 import signal
-import time
 from dotenv import load_dotenv
 load_dotenv(verbose=True)
 
+from contextlib import nullcontext
 from browser_use import Agent
-from langchain_openai import ChatOpenAI
 
 from src.proxy.local_proxy import PROXY_URL, proxy_env
 from src.tools import AsyncTool, ToolResult
@@ -15,6 +14,7 @@ from src.tools.browser import Controller
 from src.utils import assemble_project_path
 from src.config import config
 from src.registry import register_tool
+from src.models import model_manager
 
 @register_tool("auto_browser_use")
 class AutoBrowserUseTool(AsyncTool):
@@ -42,7 +42,6 @@ class AutoBrowserUseTool(AsyncTool):
         os.makedirs(self.http_save_path, exist_ok=True)
 
         self._init_pdf_server()
-        self.browser_agent = self._init_browser_agent()
 
     def _init_pdf_server(self):
 
@@ -64,31 +63,11 @@ class AutoBrowserUseTool(AsyncTool):
                 print("Force killing server...")
                 server_proc.kill()
 
-    def _init_browser_agent(self, task=None):
-        """
-        Initialize the browser agent with the given configuration.
-        """
-
-        if config.use_local_proxy:
-            os.environ["HTTP_PROXY"] = PROXY_URL
-            os.environ["HTTPS_PROXY"] = PROXY_URL
-
+    async def _browser_task(self, task):
         controller = Controller(http_save_path=self.http_save_path)
 
-        if config.use_local_proxy:
-            model_id = self.browser_tool_config.model_id
-            model = ChatOpenAI(
-                model=model_id,
-                api_key=os.getenv("SKYWORK_API_KEY"),
-                base_url=os.getenv("SKYWORK_API_BASE"),
-            )
-        else:
-            model_id = self.browser_tool_config.model_id
-            model = ChatOpenAI(
-                model=model_id,
-                api_key=os.getenv("OPENAI_API_KEY"),
-                base_url=os.getenv("OPENAI_API_BASE"),
-            )
+        model_id = self.browser_tool_config.model_id
+        model = model_manager.registed_models[model_id]
 
         browser_agent = Agent(
             task=task,
@@ -98,11 +77,7 @@ class AutoBrowserUseTool(AsyncTool):
             page_extraction_llm=model,
         )
 
-        return browser_agent
-
-    async def _browser_task(self, task):
-        self.browser_agent = self._init_browser_agent(task=task)
-        history = await self.browser_agent.run(max_steps=50)
+        history = await browser_agent.run(max_steps=50)
         contents = history.extracted_content()
         return "\n".join(contents)
 

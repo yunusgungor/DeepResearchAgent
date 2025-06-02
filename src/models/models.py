@@ -3,14 +3,16 @@ from openai import OpenAI
 from typing import Dict, Any, Tuple
 
 from dotenv import load_dotenv
-from pandas import api
 load_dotenv(verbose=True)
+
+from langchain_openai import ChatOpenAI
+
 from src.logger import logger
 from src.models.litellm import LiteLLMModel
 from src.models.openaillm import OpenAIServerModel
 from src.models.hfllm import InferenceClientModel
 from src.utils import Singleton
-from src.proxy.local_proxy import HTTP_CLIENT
+from src.proxy.local_proxy import HTTP_CLIENT, ASYNC_HTTP_CLIENT
 
 custom_role_conversions = {"tool-call": "assistant", "tool-response": "user"}
 PLACEHOLDER = "PLACEHOLDER"
@@ -25,6 +27,7 @@ class ModelManager(metaclass=Singleton):
         self._register_anthropic_models(use_local_proxy=use_local_proxy)
         self._register_google_models(use_local_proxy=use_local_proxy)
         self._register_qwen_models(use_local_proxy=use_local_proxy)
+        self._register_langchain_models(use_local_proxy=use_local_proxy)
     
     def _check_local_api_key(self, local_api_key_name: str, remote_api_key_name: str) -> str:
         api_key = os.getenv(local_api_key_name, PLACEHOLDER)
@@ -326,3 +329,35 @@ class ModelManager(metaclass=Singleton):
                 custom_role_conversions=custom_role_conversions,
             )
             self.registed_models[model_name] = model
+
+    def _register_langchain_models(self, use_local_proxy: bool = False):
+        # langchain models
+        if use_local_proxy:
+            logger.info("Using local proxy for LangChain models")
+            api_key = self._check_local_api_key(local_api_key_name="SKYWORK_API_KEY",
+                                                remote_api_key_name="OPENAI_API_KEY")
+            api_base = self._check_local_api_base(local_api_base_name="SKYWORK_API_BASE",
+                                                    remote_api_base_name="OPENAI_API_BASE")
+
+            model = ChatOpenAI(
+                model="gpt-4.1",
+                api_key=api_key,
+                base_url=api_base,
+                http_client=HTTP_CLIENT,
+                http_async_client=ASYNC_HTTP_CLIENT,
+            )
+            self.registed_models["langchain-gpt-4.1"] = model
+
+        else:
+            logger.info("Using remote API for LangChain models")
+            api_key = self._check_local_api_key(local_api_key_name="OPENAI_API_KEY",
+                                                remote_api_key_name="OPENAI_API_KEY")
+            api_base = self._check_local_api_base(local_api_base_name="OPENAI_API_BASE",
+                                                    remote_api_base_name="OPENAI_API_BASE")
+
+            model = ChatOpenAI(
+                model="gpt-4.1",
+                api_key=api_key,
+                base_url=api_base,
+            )
+            self.registed_models["langchain-gpt-4.1"] = model

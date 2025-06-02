@@ -21,7 +21,14 @@ if __name__ == "__main__":
         }
     ]
     
-    response = asyncio.run(model_manager.registed_models["claude37-sonnet-thinking"](
-        messages=messages,
-    ))
-    print(response)
+    # response = asyncio.run(model_manager.registed_models["claude37-sonnet-thinking"](
+    #     messages=messages,
+    # ))
+    # print(response)
+
+    model = model_manager.registed_models["langchain-gpt-4.1"]
+    print(model)
+    res = model.invoke(
+        "What is the capital of France?",
+    )
+    print(res)
