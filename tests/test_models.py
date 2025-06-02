@@ -12,7 +12,7 @@ sys.path.append(root)
 from src.models import model_manager
 
 if __name__ == "__main__":
-    model_manager.init_models(use_local_proxy=True)
+    model_manager.init_models(use_local_proxy=False)
     
     messages = [
         {
@@ -21,14 +21,7 @@ if __name__ == "__main__":
         }
     ]
     
-    # response = asyncio.run(model_manager.registed_models["claude37-sonnet-thinking"](
-    #     messages=messages,
-    # ))
-    # print(response)
-
-    model = model_manager.registed_models["langchain-gpt-4.1"]
-    print(model)
-    res = model.invoke(
-        "What is the capital of France?",
-    )
-    print(res)
+    response = asyncio.run(model_manager.registed_models["claude-4-sonnet"](
+        messages=messages,
+    ))
+    print(response)

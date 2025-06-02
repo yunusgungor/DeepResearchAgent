@@ -44,7 +44,7 @@ username = "xxxx"
 password = "xxxx"
 
 [deep_analyzer_tool]
-analyzer_model_ids = ["gemini-2.5-pro"]
+analyzer_model_ids = ["gemini-2.5-pro", "o3"]
 summarizer_model_id = "gemini-2.5-pro"
 
 # Agent configs
@@ -64,7 +64,7 @@ managed_agents = ["deep_analyzer_agent", "browser_use_agent", "deep_researcher_a
 [agent.deep_analyzer_agent_config]
 model_id = "claude-4-sonnet"
 name = "deep_analyzer_agent"
-description = "Performs systematic, step-by-step analysis..."
+description = "A deep analyzer agent that can perform systematic, step-by-step analysis."
 max_steps = 3
 template_path = "src/agent/deep_analyzer_agent/prompts/deep_analyzer_agent.yaml"
 tools = ["deep_analyzer", "python_interpreter"]
@@ -72,7 +72,7 @@ tools = ["deep_analyzer", "python_interpreter"]
 [agent.browser_use_agent_config]
 model_id = "gpt-4.1"
 name = "browser_use_agent"
-description = "Searches relevant web pages and interacts with them."
+description = "A browser use agent that can search relevant web pages and interact with them."
 max_steps = 5
 template_path = "src/agent/browser_use_agent/prompts/browser_use_agent.yaml"
 tools = ["auto_browser_use", "python_interpreter"]
@@ -80,7 +80,7 @@ tools = ["auto_browser_use", "python_interpreter"]
 [agent.deep_researcher_agent_config]
 model_id = "claude-4-sonnet"
 name = "deep_researcher_agent"
-description = "Conducts extensive web searches."
+description = "A deep researcher agent that can conduct extensive web searches."
 max_steps = 3
 template_path = "src/agent/deep_researcher_agent/prompts/deep_researcher_agent.yaml"
 tools = ["deep_researcher", "python_interpreter"]
