@@ -117,13 +117,14 @@ class WebSearcherTool(AsyncTool):
     }
     output_type = 'any'
 
-    def __init(self):
+    def __init__(self):
+        super(WebSearcherTool, self).__init__()
 
         self.searcher_config = config.searcher_tool
-        _search_engine: dict[str, WebSearchEngine] = {
+        self._search_engine: dict[str, WebSearchEngine] = {
             "google": GoogleSearchEngine()
         }
-        self.smax_length: int = (
+        self.max_length: int = (
             getattr(self.searcher_config, "max_length", 20000)
             if self.searcher_config
             else 20000

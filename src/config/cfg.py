@@ -28,7 +28,7 @@ class DeepResearcherToolConfig(BaseModel):
     max_follow_ups: int = Field(default=3, description="Maximum number of follow-up questions to ask")
 
 class BrowserToolConfig(BaseModel):
-    model_id: str = Field(default="claude37-sonnet-thinking", description="Model ID for the LLM to use")
+    model_id: str = Field(default="gpt-4.1", description="Model ID for the LLM to use")
     headless: bool = Field(False, description="Whether to run browser in headless mode")
     disable_security: bool = Field(True, description="Disable browser security features")
     extra_chromium_args: List[str] = Field(default_factory=list, description="Extra arguments to pass to the browser")
@@ -112,7 +112,7 @@ class Config(BaseModel):
     concurrency: int = 4
     log_path: str = 'log.txt'
     download_path: str = 'downloads_folder'
-    use_local_proxy: bool = Field(default=False, description="Whether to use local proxy")
+    use_local_proxy: bool = Field(default=True, description="Whether to use local proxy")
     split: str = Field(default="validation", description="Set name")
     save_path: str = Field(default="agentscope.jsonl", description="Path to save the answers")
     

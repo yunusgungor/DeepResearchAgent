@@ -21,7 +21,7 @@ if __name__ == "__main__":
         }
     ]
     
-    response = asyncio.run(model_manager.registed_models["claude-4-sonnet"](
+    response = asyncio.run(model_manager.registed_models["claude37-sonnet-thinking"](
         messages=messages,
     ))
     print(response)

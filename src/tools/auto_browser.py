@@ -6,14 +6,12 @@ import time
 from dotenv import load_dotenv
 load_dotenv(verbose=True)
 
-import asyncio
 from browser_use import Agent
-from browser_use import BrowserConfig, Browser
 from langchain_openai import ChatOpenAI
 
 from src.proxy.local_proxy import PROXY_URL, proxy_env
 from src.tools import AsyncTool, ToolResult
-from src.tools.browser import Controller, CDP
+from src.tools.browser import Controller
 from src.utils import assemble_project_path
 from src.config import config
 from src.registry import register_tool
@@ -66,7 +64,7 @@ class AutoBrowserUseTool(AsyncTool):
                 print("Force killing server...")
                 server_proc.kill()
 
-    def _init_browser_agent(self):
+    def _init_browser_agent(self, task=None):
         """
         Initialize the browser agent with the given configuration.
         """
@@ -93,7 +91,7 @@ class AutoBrowserUseTool(AsyncTool):
             )
 
         browser_agent = Agent(
-            task="",
+            task=task,
             llm=model,
             enable_memory=False,
             controller=controller,
@@ -103,15 +101,9 @@ class AutoBrowserUseTool(AsyncTool):
         return browser_agent
 
     async def _browser_task(self, task):
-        if config.use_local_proxy:
-            with proxy_env(PROXY_URL):
-                self.browser_agent.add_new_task(task)
-                history = await self.browser_agent.run(max_steps=50)
-                contents = history.extracted_content()
-        else:
-            self.browser_agent.add_new_task(task)
-            history = await self.browser_agent.run(max_steps=50)
-            contents = history.extracted_content()
+        self.browser_agent = self._init_browser_agent(task=task)
+        history = await self.browser_agent.run(max_steps=50)
+        contents = history.extracted_content()
         return "\n".join(contents)
 
     async def forward(self, task: str) -> ToolResult:
