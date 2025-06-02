@@ -6,6 +6,10 @@ DeepResearchAgent is a hierarchical multi-agent system designed not only for dee
 
 ## Architecture
 
+<p align="center">
+  <img src="./docs/architecture.png" alt="Architecture" width="700"/>
+</p>
+
 The system adopts a two-layer structure:
 
 ### 1. Top-Level Planning Agent
