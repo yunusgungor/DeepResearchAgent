@@ -129,6 +129,27 @@ DANGEROUS_MODULES = [
     "socket",
     "subprocess",
     "sys",
+    "ctypes",
+    "fcntl",
+    "grp",
+    "pwd",
+    # "resource",  # Potentially too restrictive, can be added if specific issues arise
+    "signal",
+    # "syslog",    # Application-specific, might be needed
+    "termios",
+    "tty",
+    "select",
+    "gc",        # Added (can be used to inspect arbitrary objects)
+    "_thread",   # Added (low-level threading)
+    "asyncio",   # Added (can be used for I/O, networking, subprocesses)
+    "marshal",   # Added (can be used to create code objects)
+    "msvcrt",    # Added (Windows specific low-level routines)
+    "pickle",    # Added (can execute arbitrary code)
+    "pipes",     # Added (shell command pipelines)
+    "posix",     # Added (alias for os functions)
+    "threading", # Added (while less dangerous than _thread, still needs caution)
+    "wsgiref",   # Added (can start web servers)
+    "xmlrpc",    # Added (can make network requests)
 ]
 
 DANGEROUS_FUNCTIONS = [
@@ -138,9 +159,29 @@ DANGEROUS_FUNCTIONS = [
     "builtins.globals",
     "builtins.locals",
     "builtins.__import__",
+    "builtins.open",
+    "builtins.getattr",
+    "builtins.setattr",
+    "builtins.delattr",
+    "builtins.vars",
     "os.popen",
     "os.system",
+    "os.execl", "os.execle", "os.execlp", "os.execlpe", "os.execv", "os.execve", "os.execvp", "os.execvpe",
+    "os.fork", "os.forkpty",
+    "os.kill", "os.killpg",
+    "os.plock",
+    "os.putenv", "os.unsetenv",
+    "os.spawnl", "os.spawnle", "os.spawnlp", "os.spawnlpe", "os.spawnv", "os.spawnve", "os.spawnvp", "os.spawnvpe",
     "posix.system",
+    "subprocess.call", "subprocess.check_call", "subprocess.check_output", "subprocess.Popen", "subprocess.run",
+    "sys.exit", "sys.gettrace", "sys.settrace", "sys.meta_path", "sys.path_hooks", "sys.path_importer_cache",
+    "shutil.copy", "shutil.copy2", "shutil.copyfile", "shutil.copyfileobj", "shutil.copymode", "shutil.copystat", "shutil.copytree",
+    "shutil.move", "shutil.rmtree",
+    "socket.socket",
+    "pickle.load", "pickle.loads",
+    "ctypes.CDLL", "ctypes.PyDLL", "ctypes.WinDLL",
+    "gc.get_objects", "gc.get_referrers", "gc.get_referents",
+    # "object.__subclasses__", # Relies on nodunder_getattr
 ]
 
 
@@ -233,14 +274,17 @@ def build_import_tree(authorized_imports: List[str]) -> Dict[str, Any]:
 
 
 def check_import_authorized(import_to_check: str, authorized_imports: list[str]) -> bool:
-    current_node = build_import_tree(authorized_imports)
-    for part in import_to_check.split("."):
+    tree = build_import_tree(authorized_imports)
+    current_node = tree
+    parts = import_to_check.split(".")
+    for i, part in enumerate(parts):
         if "*" in current_node:
             return True
         if part not in current_node:
             return False
         current_node = current_node[part]
-    return True
+
+    return not current_node or "*" in current_node
 
 
 def safer_eval(func: Callable):
@@ -1097,39 +1141,42 @@ def evaluate_with(
 
 
 def get_safe_module(raw_module, authorized_imports, visited=None):
-    """Creates a safe copy of a module or returns the original if it's a function"""
-    # If it's a function or non-module object, return it directly
     if not isinstance(raw_module, ModuleType):
         return raw_module
 
-    # Handle circular references: Initialize visited set for the first call
     if visited is None:
         visited = set()
 
     module_id = id(raw_module)
     if module_id in visited:
-        return raw_module  # Return original for circular refs
+        return raw_module
 
     visited.add(module_id)
 
-    # Create new module for actual modules
+    # Check authorization for the module itself before proceeding
+    if not check_import_authorized(raw_module.__name__, authorized_imports):
+        raise InterpreterError(f"Import of module {raw_module.__name__} is not allowed.")
+
     safe_module = ModuleType(raw_module.__name__)
 
-    # Copy all attributes by reference, recursively checking modules
     for attr_name in dir(raw_module):
         try:
             attr_value = getattr(raw_module, attr_name)
         except (ImportError, AttributeError) as e:
-            # lazy / dynamic loading module -> INFO log and skip
             logger.info(
                 f"Skipping import error while copying {raw_module.__name__}.{attr_name}: {type(e).__name__} - {e}"
             )
             continue
-        # Recursively process nested modules, passing visited set
-        if isinstance(attr_value, ModuleType):
-            attr_value = get_safe_module(attr_value, authorized_imports, visited=visited)
 
-        setattr(safe_module, attr_name, attr_value)
+        if isinstance(attr_value, ModuleType):
+            submodule_full_name = f"{raw_module.__name__}.{attr_name}"
+            # Only add authorized submodules
+            if check_import_authorized(submodule_full_name, authorized_imports):
+                processed_attr_value = get_safe_module(attr_value, authorized_imports, visited=visited)
+                setattr(safe_module, attr_name, processed_attr_value)
+            # Else: unauthorized submodule, so we don't add it to safe_module
+        else:
+            setattr(safe_module, attr_name, attr_value)
 
     return safe_module
 
