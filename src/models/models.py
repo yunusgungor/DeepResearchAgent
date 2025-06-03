@@ -332,6 +332,21 @@ class ModelManager(metaclass=Singleton):
 
     def _register_langchain_models(self, use_local_proxy: bool = False):
         # langchain models
+        models = [
+            {
+                "model_name": "langchain-gpt-4o",
+                "model_id": "gpt-4o",
+            },
+            {
+                "model_name": "langchain-gpt-4.1",
+                "model_id": "gpt-4.1",
+            },
+            {
+                "model_name": "langchain-o3",
+                "model_id": "o3",
+            },
+        ]
+
         if use_local_proxy:
             logger.info("Using local proxy for LangChain models")
             api_key = self._check_local_api_key(local_api_key_name="SKYWORK_API_KEY",
@@ -339,14 +354,18 @@ class ModelManager(metaclass=Singleton):
             api_base = self._check_local_api_base(local_api_base_name="SKYWORK_API_BASE",
                                                     remote_api_base_name="OPENAI_API_BASE")
 
-            model = ChatOpenAI(
-                model="gpt-4.1",
-                api_key=api_key,
-                base_url=api_base,
-                http_client=HTTP_CLIENT,
-                http_async_client=ASYNC_HTTP_CLIENT,
-            )
-            self.registed_models["langchain-gpt-4.1"] = model
+            for model in models:
+                model_name = model["model_name"]
+                model_id = model["model_id"]
+
+                model = ChatOpenAI(
+                    model=model_id,
+                    api_key=api_key,
+                    base_url=api_base,
+                    http_client=HTTP_CLIENT,
+                    http_async_client=ASYNC_HTTP_CLIENT,
+                )
+                self.registed_models[model_name] = model
 
         else:
             logger.info("Using remote API for LangChain models")
@@ -355,9 +374,13 @@ class ModelManager(metaclass=Singleton):
             api_base = self._check_local_api_base(local_api_base_name="OPENAI_API_BASE",
                                                     remote_api_base_name="OPENAI_API_BASE")
 
-            model = ChatOpenAI(
-                model="gpt-4.1",
-                api_key=api_key,
-                base_url=api_base,
-            )
-            self.registed_models["langchain-gpt-4.1"] = model
+            for model in models:
+                model_name = model["model_name"]
+                model_id = model["model_id"]
+
+                model = ChatOpenAI(
+                    model=model_id,
+                    api_key=api_key,
+                    base_url=api_base,
+                )
+                self.registed_models[model_name] = model

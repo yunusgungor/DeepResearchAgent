@@ -47,7 +47,8 @@ class WebFetcherTool(AsyncTool):
     }
     output_type = "any"
 
-    def __init(self):
+    def __init__(self):
+        super(WebFetcherTool, self).__init__()
         self.converter = MarkitdownConverter(
             use_llm=False,
             model_id="gpt-4.1",

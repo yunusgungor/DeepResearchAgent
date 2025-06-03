@@ -102,7 +102,7 @@ async def answer_single_question(example, answers_file):
 
         agent_memory = agent.write_memory_to_messages(summary_mode=True)
 
-        final_result = prepare_response(augmented_question, agent_memory, reformulation_model=model_manager.registed_models["o3"])
+        final_result = await prepare_response(augmented_question, agent_memory, reformulation_model=model_manager.registed_models["o3"])
 
         output = str(final_result)
         for memory_step in agent.memory.steps:
@@ -165,7 +165,7 @@ async def main():
     tasks_to_run = get_tasks_to_run(config.save_path, dataset)
     logger.info(f"Loaded {len(tasks_to_run)} tasks to run.")
     
-    # Run tasks
+    # # Run tasks
     batch_size = getattr(config, "concurrency", 4)
     for i in range(0, len(tasks_to_run), batch_size):
         batch = tasks_to_run[i:min(i + batch_size, len(tasks_to_run))]
