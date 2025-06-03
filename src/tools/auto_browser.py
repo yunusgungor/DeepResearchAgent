@@ -67,6 +67,12 @@ class AutoBrowserUseTool(AsyncTool):
         controller = Controller(http_save_path=self.http_save_path)
 
         model_id = self.browser_tool_config.model_id
+
+        assert model_id in ['gpt-4.1'], f"Model should be in [gpt-4.1, ], but got {model_id}. Please check your config file."
+
+        if "lanchain" not in model_id:
+            model_id = f"lanchain-{model_id}"
+
         model = model_manager.registed_models[model_id]
 
         browser_agent = Agent(
