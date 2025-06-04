@@ -30,7 +30,6 @@ max_follow_ups = 3
 summarizer_model_id = "Qwen"
 
 [browser_tool]
-model_id = "Qwen"
 headless = false
 disable_security = true
 extra_chromium_args = []
