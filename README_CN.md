@@ -117,41 +117,6 @@ git clone https://huggingface.co/datasets/gaia-benchmark/GAIA
 python examples/run_gaia.py
 ```
 
-### 示例 3：部署本地 Qwen 模型（使用 vLLM）
-
-#### 第一步：启动 vLLM 服务
-
-```bash
-nohup bash -c 'CUDA_VISIBLE_DEVICES=0,1 python -m vllm.entrypoints.openai.api_server \
-  --model /input0/Qwen3-32B \
-  --served-model-name Qwen \
-  --host 0.0.0.0 \
-  --port 8000 \
-  --max-num-seqs 16 \
-  --enable-auto-tool-choice \
-  --tool-call-parser hermes \
-  --tensor_parallel_size 2' > vllm_qwen.log 2>&1 &
-```
-
-`.env` 文件配置：
-
-```bash
-QWEN_API_BASE=http://localhost:8000/v1
-QWEN_API_KEY="abc"
-```
-
-#### 第二步：启动智能体服务
-
-```bash
-python main.py
-```
-
-输入任务命令示例：
-
-```bash
-Use deep_researcher_agent to search the latest papers on the topic of 'AI Agent' and then summarize it.
-```
-
 ## 实验结果
 
 我们在 GAIA 验证集上进行了评估，并于 5 月 10 日达到最先进性能：
@@ -188,15 +153,59 @@ playwright install chromium --with-deps --no-shell
 
 推荐使用 Claude-3.7-Sonnet 作为规划智能体，现已兼容 GPT-4.1 和 Gemini-2.5-Pro。
 
+### 4. 使用 vllm 进行本地模型部署
+我们提供 huggingface 作为加载本地模型的快捷方式。我们还提供 vllm 作为启动服务的方式，以便提供并行加速。
+
+### 部署本地 Qwen 模型（使用 vLLM）
+
+#### 第一步：启动 vLLM 服务
+
+```bash
+nohup bash -c 'CUDA_VISIBLE_DEVICES=0,1 python -m vllm.entrypoints.openai.api_server \
+  --model /input0/Qwen3-32B \
+  --served-model-name Qwen \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --max-num-seqs 16 \
+  --enable-auto-tool-choice \
+  --tool-call-parser hermes \
+  --tensor_parallel_size 2' > vllm_qwen.log 2>&1 &
+```
+
+`.env` 文件配置：
+
+```bash
+QWEN_API_BASE=http://localhost:8000/v1
+QWEN_API_KEY="abc"
+```
+
+#### 第二步：启动智能体服务
+
+```bash
+python main.py
+```
+
+输入任务命令示例：
+
+```bash
+Use deep_researcher_agent to search the latest papers on the topic of 'AI Agent' and then summarize it.
+```
+
 ## 致谢
 
-本项目受以下开源项目启发，并在此基础上做出改进：
+DeepResearchAgent 主要借鉴了 smolagents 的架构设计，并在此基础上做出了以下改进：
+- 对 smolagents 的代码进行了模块化重构，使其结构更加清晰和易于维护。
+- 将原有的同步执行框架改为异步执行框架。
+- 优化了多智能体的初始化与部署流程，使其更加高效且易用。
 
-* [smolagents](https://github.com/huggingface/smolagents)
-* [OpenManus](https://github.com/mannaandpoem/OpenManus)
-* [browser-use](https://github.com/browser-use/browser-use)
-* [crawl4ai](https://github.com/unclecode/crawl4ai)
-* [markitdown](https://github.com/microsoft/markitdown)
+我们由衷感谢以下开源项目对本项目的重要贡献：
+- [smolagents](https://github.com/huggingface/smolagents) - 轻量级智能体框架。
+- [OpenManus](https://github.com/mannaandpoem/OpenManus) - 异步智能体框架。
+- [browser-use](https://github.com/browser-use/browser-use) - 基于 AI 的浏览器自动化工具。
+- [crawl4ai](https://github.com/unclecode/crawl4ai) - 面向 AI 应用的网页爬取库。
+- [markitdown](https://github.com/microsoft/markitdown) - 文件转 Markdown 工具。
+
+我们由衷感谢上述项目的所有贡献者和维护者，感谢他们推动 AI 技术进步并将其开放给社区使用。
 
 ## 贡献
 

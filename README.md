@@ -122,41 +122,6 @@ git clone https://huggingface.co/datasets/gaia-benchmark/GAIA
 python examples/run_gaia.py
 ```
 
-### Deploying Qwen Models via vLLM
-
-#### Step 1: Launch the vLLM Inference Service
-
-```bash
-nohup bash -c 'CUDA_VISIBLE_DEVICES=0,1 python -m vllm.entrypoints.openai.api_server \
-  --model /input0/Qwen3-32B \
-  --served-model-name Qwen \
-  --host 0.0.0.0 \
-  --port 8000 \
-  --max-num-seqs 16 \
-  --enable-auto-tool-choice \
-  --tool-call-parser hermes \
-  --tensor_parallel_size 2' > vllm_qwen.log 2>&1 &
-```
-
-Update `.env`:
-
-```bash
-QWEN_API_BASE=http://localhost:8000/v1
-QWEN_API_KEY="abc"
-```
-
-#### Step 2: Launch the Agent Service
-
-```bash
-python main.py
-```
-
-Example command:
-
-```bash
-Use deep_researcher_agent to search the latest papers on the topic of 'AI Agent' and then summarize it.
-```
-
 ## Experiments
 
 We evaluated our agent on the GAIA validation set and achieved state-of-the-art performance on May 10th.
@@ -195,15 +160,57 @@ playwright install chromium --with-deps --no-shell
 
 Function-calling is now supported natively by GPT-4.1 / Gemini 2.5 Pro. Claude-3.7-Sonnet is also recommended.
 
+### 4. Use vllm for local models
+We provide huggingface as a shortcut to the local model. Also provide vllm as a way to start services so that parallel acceleration can be provided.
+
+#### Step 1: Launch the vLLM Inference Service
+
+```bash
+nohup bash -c 'CUDA_VISIBLE_DEVICES=0,1 python -m vllm.entrypoints.openai.api_server \
+  --model /input0/Qwen3-32B \
+  --served-model-name Qwen \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --max-num-seqs 16 \
+  --enable-auto-tool-choice \
+  --tool-call-parser hermes \
+  --tensor_parallel_size 2' > vllm_qwen.log 2>&1 &
+```
+
+Update `.env`:
+
+```bash
+QWEN_API_BASE=http://localhost:8000/v1
+QWEN_API_KEY="abc"
+```
+
+#### Step 2: Launch the Agent Service
+
+```bash
+python main.py
+```
+
+Example command:
+
+```bash
+Use deep_researcher_agent to search the latest papers on the topic of 'AI Agent' and then summarize it.
+```
+
 ## Acknowledgement
 
-DeepResearchAgent is inspired by and improved upon:
+DeepResearchAgent is primarily inspired by the architecture of smolagents. The following improvements have been made:
+- The codebase of smolagents has been modularized for better structure and organization.
+- The original synchronous framework has been refactored into an asynchronous one.
+- The multi-agent setup process has been optimized to make it more user-friendly and efficient.
 
-* [smolagents](https://github.com/huggingface/smolagents)
-* [OpenManus](https://github.com/mannaandpoem/OpenManus)
-* [browser-use](https://github.com/browser-use/browser-use)
-* [crawl4ai](https://github.com/unclecode/crawl4ai)
-* [markitdown](https://github.com/microsoft/markitdown)
+We would like to express our gratitude to the following open source projects, which have greatly contributed to the development of this work:
+- [smolagents](https://github.com/huggingface/smolagents) - A lightweight agent framework.
+- [OpenManus](https://github.com/mannaandpoem/OpenManus) - An asynchronous agent framework.
+- [browser-use](https://github.com/browser-use/browser-use) - An AI-powered browser automation tool.
+- [crawl4ai](https://github.com/unclecode/crawl4ai) - A web crawling library for AI applications.
+- [markitdown](https://github.com/microsoft/markitdown) - A tool for converting files to Markdown format.
+
+We sincerely appreciate the efforts of all contributors and maintainers of these projects for their commitment to advancing AI technologies and making them available to the wider community.
 
 ## Contribution
 
