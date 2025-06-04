@@ -380,7 +380,7 @@ You have been provided with these additional arguments, that you can access usin
                 self.step_number += 1
 
         if final_answer is None and self.step_number == max_steps + 1:
-            final_answer = self._handle_max_steps_reached(task, images, step_start_time)
+            final_answer = await self._handle_max_steps_reached(task, images, step_start_time)
             yield action_step
         yield FinalAnswerStep(final_answer)
 
@@ -407,8 +407,8 @@ You have been provided with these additional arguments, that you can access usin
                 memory_step, agent=self
             )
 
-    def _handle_max_steps_reached(self, task: str, images: list["PIL.Image.Image"], step_start_time: float) -> Any:
-        final_answer = self.provide_final_answer(task, images)
+    async def _handle_max_steps_reached(self, task: str, images: list["PIL.Image.Image"], step_start_time: float) -> Any:
+        final_answer = await self.provide_final_answer(task, images)
         final_memory_step = ActionStep(
             step_number=self.step_number, error=AgentMaxStepsError("Reached max steps.", self.logger)
         )
@@ -577,7 +577,10 @@ You have been provided with these additional arguments, that you can access usin
         ]
         if images:
             messages[0]["content"].append({"type": "image"})
-        messages += await self.write_memory_to_messages()[1:]
+        messages = await self.write_memory_to_messages()
+        messages += messages[1:]
+
+
         messages += [
             {
                 "role": MessageRole.USER,
@@ -592,7 +595,7 @@ You have been provided with these additional arguments, that you can access usin
             }
         ]
         try:
-            chat_message: ChatMessage = self.model(messages)
+            chat_message: ChatMessage = await self.model(messages)
             return chat_message.content
         except Exception as e:
             return f"Error in generating final LLM output:\n{e}"
