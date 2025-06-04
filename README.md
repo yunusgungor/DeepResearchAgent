@@ -32,6 +32,7 @@ The system adopts a two-layer structure:
 - Hierarchical agent collaboration for complex and dynamic task scenarios
 - Extensible agent system, allowing easy integration of additional specialized agents
 - Automated information analysis, research, and web interaction capabilities
+- Secure Python code execution environment for tools, featuring configurable import controls, restricted built-ins, attribute access limitations, and resource limits. (See [PythonInterpreterTool Sandboxing](./docs/python_interpreter_sandbox.md) for details).
   
 
 ## Updates
