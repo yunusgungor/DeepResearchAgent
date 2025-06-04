@@ -1,5 +1,7 @@
 # DeepResearchAgent
 
+English | [简体中文](README_CN.md)
+
 ## Introduction
 
 DeepResearchAgent is a hierarchical multi-agent system designed not only for deep research tasks but also for general-purpose task solving. The framework leverages a top-level planning agent to coordinate multiple specialized lower-level agents, enabling automated task decomposition and efficient execution across diverse and complex domains.
@@ -13,22 +15,28 @@ DeepResearchAgent is a hierarchical multi-agent system designed not only for dee
 The system adopts a two-layer structure:
 
 ### 1. Top-Level Planning Agent
-- Responsible for understanding, decomposing, and planning the overall workflow for a given task.
-- Breaks down tasks into manageable sub-tasks and assigns them to appropriate lower-level agents.
-- Dynamically coordinates the collaboration among agents to ensure smooth task completion.
+
+* Responsible for understanding, decomposing, and planning the overall workflow for a given task.
+* Breaks down tasks into manageable sub-tasks and assigns them to appropriate lower-level agents.
+* Dynamically coordinates the collaboration among agents to ensure smooth task completion.
 
 ### 2. Specialized Lower-Level Agents
-- **Deep Analyzer**
-  - Performs in-depth analysis of input information, extracting key insights and potential requirements.
-  - Supports analysis of various data types, including text and structured data.
-- **Deep Researcher**
-  - Conducts thorough research on specified topics or questions, retrieving and synthesizing high-quality information.
-  - Capable of generating research reports or knowledge summaries automatically.
-- **Browser Use**
-  - Automates browser operations, supporting web search, information extraction, and data collection tasks.
-  - Assists the Deep Researcher in acquiring up-to-date information from the internet.
+
+* **Deep Analyzer**
+
+  * Performs in-depth analysis of input information, extracting key insights and potential requirements.
+  * Supports analysis of various data types, including text and structured data.
+* **Deep Researcher**
+
+  * Conducts thorough research on specified topics or questions, retrieving and synthesizing high-quality information.
+  * Capable of generating research reports or knowledge summaries automatically.
+* **Browser Use**
+
+  * Automates browser operations, supporting web search, information extraction, and data collection tasks.
+  * Assists the Deep Researcher in acquiring up-to-date information from the internet.
 
 ## Features
+
 - Hierarchical agent collaboration for complex and dynamic task scenarios
 - Extensible agent system, allowing easy integration of additional specialized agents
 - Automated information analysis, research, and web interaction capabilities
@@ -36,62 +44,60 @@ The system adopts a two-layer structure:
   
 
 ## Updates
-* 2025.06.01
-  - Update the browser-use to 0.1.48.
-* 2025.05.30
-  - Convert the sub agent to a function call, so that the planning agent can call the sub agents directly. Planning agent can now be gpt-4.1 or gemini-2.5-pro.
-* 2025.05.27
-  - Updated the available remote API calls to support OpenAI, Anthropic, and Google LLMs.
-  - Added support for local Qwen models (via vllm, compatible with OpenAI API format, see details at the end of README)
+
+* **2025.06.01**: Update the browser-use to 0.1.48.
+* **2025.05.30**: Convert the sub agent to a function call. Planning agent can now be gpt-4.1 or gemini-2.5-pro.
+* **2025.05.27**: Support OpenAI, Anthropic, Google LLMs, and local Qwen models (via vLLM, see details in [Usage](#usage)).
 
 ## TODO List
-- [x] Asynchronous feature completed
-- [ ] Image Generation Agent to be developed
-- [ ] MCP in progress
-- [ ] AI4Research Agent to be developed
-- [ ] Novel Writing Agent to be developed
+
+* [x] Asynchronous feature completed
+* [ ] Image Generation Agent to be developed
+* [ ] MCP in progress
+* [ ] AI4Research Agent to be developed
+* [ ] Novel Writing Agent to be developed
 
 ## Installation
 
 ### Prepare Environment
-```
+
+```bash
 # poetry install environment
 conda create -n dra python=3.11
 conda activate dra
 make install
 
-# (Optional) You can also use requirements.txt to setup the environment
+# (Optional) You can also use requirements.txt
 conda create -n dra python=3.11
 conda activate dra
 make install-requirements
 
-# If you encounter any issues with Playwright during installation, you can install it manually:
+# playwright install if needed
 pip install playwright
 playwright install chromium --with-deps --no-shell
 ```
 
-### Put `.env` in the root
+### Set Up `.env`
 
-`.env` should be like
-```
-PYTHONWARNINGS=ignore # ignore warnings
-ANONYMIZED_TELEMETRY=false # disable telemetry
-HUGGINEFACE_API_KEY=abcabcabc # your huggingface api key
+```bash
+PYTHONWARNINGS=ignore
+ANONYMIZED_TELEMETRY=false
+HUGGINEFACE_API_KEY=abcabcabc
 OPENAI_API_BASE=https://api.openai.com/v1
-OPENAI_API_KEY=abcabcabc # your openai api key
+OPENAI_API_KEY=abcabcabc
 ANTHROPIC_API_BASE=https://api.anthropic.com
-ANTHROPIC_API_KEY=abcabcabc # your anthropic api key
+ANTHROPIC_API_KEY=abcabcabc
 GOOGLE_APPLICATION_CREDENTIALS=/your/user/path/.config/gcloud/application_default_credentials.json
 GOOGLE_API_BASE=https://generativelanguage.googleapis.com
-GOOGLE_API_KEY=abcabcabc # your google api key
+GOOGLE_API_KEY=abcabcabc
 ```
 
-```
-Note: Maybe you have some problems using google api, here is the reference
-1. Get api key from https://aistudio.google.com/app/apikey
+Refer to:
 
-2. Get `application_default_credentials.json`. Here is the reference: https://cloud.google.com/docs/authentication/application-default-credentials?hl=zh-cn
-# Creating a Google API key requires it to be linked to a project, but the project may also need Vertex AI authorization, so it is necessary to obtain the appropriate credentials.
+* [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+* [https://cloud.google.com/docs/authentication/application-default-credentials?hl=zh-cn](https://cloud.google.com/docs/authentication/application-default-credentials?hl=zh-cn)
+
+```bash
 brew install --cask google-cloud-sdk
 gcloud init
 gcloud auth application-default login
@@ -99,49 +105,113 @@ gcloud auth application-default login
 
 ## Usage
 
-### Deep Researcher for "AI Agent" as an example
-```
+### Deep Researcher for "AI Agent"
+
+```bash
 python examples/run_example.py
 ```
 
-### GAIA as an example
+### GAIA Evaluation Example
 
-```
+```bash
 # Download GAIA
-mkdir data | cd data
+mkdir data && cd data
 git clone https://huggingface.co/datasets/gaia-benchmark/GAIA
 
-# Run the script in the examples
+# Run
 python examples/run_gaia.py
 ```
 
+### Deploying Qwen Models via vLLM
+
+#### Step 1: Launch the vLLM Inference Service
+
+```bash
+nohup bash -c 'CUDA_VISIBLE_DEVICES=0,1 python -m vllm.entrypoints.openai.api_server \
+  --model /input0/Qwen3-32B \
+  --served-model-name Qwen \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --max-num-seqs 16 \
+  --enable-auto-tool-choice \
+  --tool-call-parser hermes \
+  --tensor_parallel_size 2' > vllm_qwen.log 2>&1 &
+```
+
+Update `.env`:
+
+```bash
+QWEN_API_BASE=http://localhost:8000/v1
+QWEN_API_KEY="abc"
+```
+
+#### Step 2: Launch the Agent Service
+
+```bash
+python main.py
+```
+
+Example command:
+
+```bash
+Use deep_researcher_agent to search the latest papers on the topic of 'AI Agent' and then summarize it.
+```
+
 ## Experiments
+
 We evaluated our agent on the GAIA validation set and achieved state-of-the-art performance on May 10th.
+
 <p align="center">
   <img src="./docs/gaia_benchmark.png" alt="GAIA Example Result" width="700"/>
 </p>
 
+## Questions
+
+### 1. About Qwen Models
+
+Our framework now supports:
+
+* qwen2.5-7b-instruct
+* qwen2.5-14b-instruct
+* qwen2.5-32b-instruct
+
+Update your config:
+
+```toml
+model_id = "qwen2.5-7b-instruct"
+```
+
+### 2. Browser Use
+
+If problems occur, reinstall:
+
+```bash
+pip install "browser-use[memory]"==0.1.48
+pip install playwright
+playwright install chromium --with-deps --no-shell
+```
+
+### 3. Sub-Agent Calling
+
+Function-calling is now supported natively by GPT-4.1 / Gemini 2.5 Pro. Claude-3.7-Sonnet is also recommended.
+
 ## Acknowledgement
-DeepResearchAgent is primarily inspired by the architecture of smolagents. The following improvements have been made:
-- The codebase of smolagents has been modularized for better structure and organization.
-- The original synchronous framework has been refactored into an asynchronous one.
-- The multi-agent setup process has been optimized to make it more user-friendly and efficient.
 
-We would like to express our gratitude to the following open source projects, which have greatly contributed to the development of this work:
-- [smolagents](https://github.com/huggingface/smolagents) - A lightweight agent framework.
-- [OpenManus](https://github.com/mannaandpoem/OpenManus) - An asynchronous agent framework.
-- [browser-use](https://github.com/browser-use/browser-use) - An AI-powered browser automation tool.
-- [crawl4ai](https://github.com/unclecode/crawl4ai) - A web crawling library for AI applications.
-- [markitdown](https://github.com/microsoft/markitdown) - A tool for converting files to Markdown format.
+DeepResearchAgent is inspired by and improved upon:
 
-We sincerely appreciate the efforts of all contributors and maintainers of these projects for their commitment to advancing AI technologies and making them available to the wider community.
+* [smolagents](https://github.com/huggingface/smolagents)
+* [OpenManus](https://github.com/mannaandpoem/OpenManus)
+* [browser-use](https://github.com/browser-use/browser-use)
+* [crawl4ai](https://github.com/unclecode/crawl4ai)
+* [markitdown](https://github.com/microsoft/markitdown)
 
 ## Contribution
 
-Contributions and suggestions are welcome! Feel free to open issues or submit pull requests to improve the project.
+Contributions and suggestions are welcome! Feel free to open issues or submit pull requests.
 
 ## Cite
-```
+
+```bibtex
 @misc{DeepResearchAgent,
   title =        {`DeepResearchAgent`: A Hierarchical Multi-Agent Framework for General-purpose Task Solving.},
   author =       {Wentao Zhang, Ce Cui, Yang Liu, Bo An},
@@ -150,25 +220,8 @@ Contributions and suggestions are welcome! Feel free to open issues or submit pu
 }
 ```
 
-## Questions
+---
 
-### 1. About Qwen models
-Our framework now supports local Qwen models, including qwen2.5-7b-instruct, qwen2.5-14b-instruct, and qwen2.5-32b-instruct.
-```
-# Configure your config file to use qwen's model
-model_id = "qwen2.5-7b-instruct"
-```
+### 🇨🇳 中文版说明文档
 
-### 2. About browser use
-If you are having problems with your browser, please reinstall the browser tool.
-```
-pip install "browser-use[memory]"==0.1.48
-
-# install playwright
-pip install playwright
-playwright install chromium --with-deps --no-shell
-```
-
-### 3. About calling for sub agents
-I’ve found that both OpenAI and Google models are strictly trained for function calling, which means they no longer use JSON outputs to invoke sub-agents. Therefore, I recommend using Claude-3.7-Sonnet as the planning agent whenever possible. 
-This issue has been fixed. The planning agent can now call the sub-agents directly, so you can use gpt-4.1 or gemini-2.5-pro as the planning agent.
+如果你更习惯阅读中文说明文档，请查阅 [README.zh.md](./README.zh.md)。
