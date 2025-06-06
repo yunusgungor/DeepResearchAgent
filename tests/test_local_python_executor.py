@@ -3,7 +3,12 @@ from src.tools.executor.local_python_executor import evaluate_python_code, Inter
 
 # It's good practice to define a small, fixed list for default authorized_imports in tests
 # unless a test specifically needs to modify it.
-TEST_DEFAULT_AUTHORIZED_IMPORTS = ["math"] # Example, can be empty if preferred for stricter tests
+TEST_DEFAULT_AUTHORIZED_IMPORTS = [
+    "math",
+    "subprocess",
+    "os",
+    "os.path",
+] # Example, can be empty if preferred for stricter tests
 
 class TestPythonInterpreterSandbox(unittest.TestCase):
 

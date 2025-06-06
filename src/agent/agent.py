@@ -51,14 +51,13 @@ def create_agent():
                 raise ValueError(f"Tool ID '{tool_id}' is not registered.")
             tools.append(REGISTED_TOOLS[tool_id]())
 
-        #tools = tools + sub_agent_tools
+        tools = tools + sub_agent_tools
 
         agent = REGISTED_AGENTS["planning_agent"](
             config=planning_agent_config,
             model=model_manager.registed_models[planning_agent_config.model_id],
             tools=tools,
             max_steps=planning_agent_config.max_steps,
-            managed_agents=sub_agents,
             description=planning_agent_config.description,
             name=planning_agent_config.name,
             provide_run_summary=True,
