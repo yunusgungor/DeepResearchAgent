@@ -33,7 +33,6 @@ class AutoBrowserUseTool(AsyncTool):
     output_type = "any"
 
     def __init__(self):
-        super(AutoBrowserUseTool, self).__init__()
 
         self.browser_tool_config = config.browser_tool
 
@@ -42,6 +41,8 @@ class AutoBrowserUseTool(AsyncTool):
         os.makedirs(self.http_save_path, exist_ok=True)
 
         self._init_pdf_server()
+
+        super(AutoBrowserUseTool, self).__init__()
 
     def _init_pdf_server(self):
 

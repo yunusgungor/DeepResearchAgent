@@ -55,11 +55,10 @@ class DeepAnalyzerTool(AsyncTool):
         "additionalProperties": False,
     }
     output_type = "any"
-    
-    analyzer_config = config.deep_analyzer_tool
 
     def __init__(self):
-        super().__init__()
+
+        self.analyzer_config = config.deep_analyzer_tool
 
         self.analyzer_models = {
             model_id: model_manager.registed_models[model_id]
@@ -72,6 +71,8 @@ class DeepAnalyzerTool(AsyncTool):
             model_id="gpt-4.1",
             timeout=30,
         )
+
+        super(DeepAnalyzerTool, self).__init__()
 
     async def _analyze(self,
                  model,

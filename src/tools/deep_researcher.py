@@ -272,7 +272,7 @@ class DeepResearcherTool(AsyncTool):
         self.model = model_manager.registed_models[self.deep_researcher_tool_config.model_id]
         self.web_searcher = WebSearcherTool()
         self.web_searcher.fetch_content = True # Enable content fetching
-        super().__init__()
+        super(DeepResearcherTool, self).__init__()
 
     async def forward(
         self,
