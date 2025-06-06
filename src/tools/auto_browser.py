@@ -70,8 +70,8 @@ class AutoBrowserUseTool(AsyncTool):
 
         assert model_id in ['gpt-4.1'], f"Model should be in [gpt-4.1, ], but got {model_id}. Please check your config file."
 
-        if "lanchain" not in model_id:
-            model_id = f"lanchain-{model_id}"
+        if "langchain" not in model_id:
+            model_id = f"langchain-{model_id}"
 
         model = model_manager.registed_models[model_id]
 
