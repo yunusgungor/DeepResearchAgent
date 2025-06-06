@@ -21,7 +21,7 @@ if __name__ == "__main__":
         }
     ]
     
-    response = asyncio.run(model_manager.registed_models["claude-4-sonnet"](
+    response = asyncio.run(model_manager.registed_models["gpt-4.1"](
         messages=messages,
     ))
     print(response)
@@ -29,9 +29,5 @@ if __name__ == "__main__":
 
     # test langchain models
     model = model_manager.registed_models["langchain-gpt-4.1"]
-    response = asyncio.run(model.ainvoke("What is the capital of France?"))
-    print(response)
-
-    model = model_manager.registed_models["langchain-o3"]
     response = asyncio.run(model.ainvoke("What is the capital of France?"))
     print(response)

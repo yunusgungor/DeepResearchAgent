@@ -21,7 +21,7 @@ class SearcherToolConfig(BaseModel):
     max_length: int = Field(default=50000, description="Maximum character length for the content to be fetched")
 
 class DeepResearcherToolConfig(BaseModel):
-    model_id: str = Field(default="claude-4-sonnet", description="Model ID for the LLM to use")
+    model_id: str = Field(default="gpt-4.1", description="Model ID for the LLM to use")
     max_depth: int = Field(default=2, description="Maximum depth for the search")
     max_insights: int = Field(default=20, description="Maximum number of insights to extract")
     time_limit_seconds: int = Field(default=60, description="Time limit for the search in seconds")
@@ -48,7 +48,7 @@ class DeepAnalyzerToolConfig(BaseModel):
     summarizer_model_id: str = Field(default="gemini-2.5-pro", description="Model ID for the LLM to use")
 
 class AgentConfig(BaseModel):
-    model_id: str = Field(default="claude-4-sonnet",
+    model_id: str = Field(default="gpt-4.1",
                           description="Model ID for the LLM to use")
     name: str = Field(default="agent", 
                       description="Name of the agent")
@@ -64,10 +64,10 @@ class AgentConfig(BaseModel):
                                       description="List of agents the agent can manage")
 
 class HierarchicalAgentConfig(BaseModel):
-    name: str = Field(default="agentscope", description="Name of the hierarchical agent")
+    name: str = Field(default="dra", description="Name of the hierarchical agent")
     use_hierarchical_agent: bool = Field(default=True, description="Whether to use hierarchical agent")
     planning_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
-        model_id="claude-4-sonnet",
+        model_id="gpt-4.1",
         name="planning_agent",
         description="A planning agent that can plan the steps to complete the task.",
         max_steps=20,
@@ -76,7 +76,7 @@ class HierarchicalAgentConfig(BaseModel):
         managed_agents=["deep_analyzer_agent", "browser_use_agent", "deep_researcher_agent"],
     ))
     deep_analyzer_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
-        model_id="claude-4-sonnet",
+        model_id="gpt-4.1",
         name="deep_analyzer_agent",
         description="A team member that that performs systematic, step-by-step analysis of a given task, optionally leveraging information from external resources such as attached file or uri to provide comprehensive reasoning and answers. For any tasks that require in-depth analysis, particularly those involving attached file or uri, game, chess, computational tasks, or any other complex tasks. Please ask him for the reasoning and the final answer.",
         max_steps=3,
@@ -92,7 +92,7 @@ class HierarchicalAgentConfig(BaseModel):
         tools=["auto_browser_use", "python_interpreter"],
     ))
     deep_researcher_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
-        model_id="claude-4-sonnet",
+        model_id="gpt-4.1",
         name="deep_researcher_agent",
         description="A team member capable of conducting extensive web searches to complete tasks, primarily focused on retrieving broad and preliminary information for quickly understanding a topic or obtaining rough answers. For tasks that require precise, structured, or interactive page-level information retrieval, please use the `browser_use_agent`.",
         max_steps=3,
