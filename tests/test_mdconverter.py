@@ -16,5 +16,5 @@ if __name__ == "__main__":
     model_manager.init_models(use_local_proxy=True)
     
     mdconvert = MarkitdownConverter()
-    md = mdconvert.convert(os.path.join(root, "data/GAIA/2023/validation/1f975693-876d-457b-a649-393859e79bf3.mp3"))
+    md = mdconvert.convert(os.path.join(root, "data/GAIA/2023/validation/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf"))
     print(md)

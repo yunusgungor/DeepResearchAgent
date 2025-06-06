@@ -146,6 +146,9 @@ def search(params):
     """
     
     base_url = os.getenv("SKYWORK_GOOGLE_SEARCH_API", None)
+
+    query = params.get("q", "")
+    filter_year = params.get("filter_year", None)
     
     # Use local google search api
     if base_url is not None:
