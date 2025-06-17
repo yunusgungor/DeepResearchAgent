@@ -9,7 +9,7 @@ split = "test"
 save_path = "ssa.jsonl"
 
 # Tool Config
-[searcher_tool]
+[web_search_tool]
 engine = "Google"
 fallback_engines = ["DuckDuckGo", "Baidu", "Bing"]
 retry_delay = 10

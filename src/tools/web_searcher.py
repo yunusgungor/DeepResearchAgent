@@ -120,7 +120,7 @@ class WebSearcherTool(AsyncTool):
     def __init__(self):
         super(WebSearcherTool, self).__init__()
 
-        self.searcher_config = config.searcher_tool
+        self.searcher_config = config.web_search_tool
         self._search_engine: dict[str, WebSearchEngine] = {
             "google": GoogleSearchEngine()
         }

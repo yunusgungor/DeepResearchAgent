@@ -41,7 +41,7 @@
 * 支持信息分析、研究与网页交互
 
 ## 更新日志
-
+* **2025.06.17**：更新技术报告https://arxiv.org/abs/2506.12508.
 * **2025.06.01**：升级 browser-use 至 v0.1.48
 * **2025.05.30**：将子智能体调用方式改为函数调用，支持 GPT-4.1 和 Gemini-2.5-Pro 作为规划智能体
 * **2025.05.27**：支持 OpenAI、Anthropic、Google LLM，以及本地 Qwen 模型（使用 vLLM）
@@ -214,10 +214,13 @@ DeepResearchAgent 主要借鉴了 smolagents 的架构设计，并在此基础�
 ## 引用
 
 ```bibtex
-@misc{DeepResearchAgent,
-  title =        {`DeepResearchAgent`: A Hierarchical Multi-Agent Framework for General-purpose Task Solving.},
-  author =       {Wentao Zhang, Ce Cui, Yang Liu, Bo An},
-  howpublished = {\url{https://github.com/SkyworkAI/DeepResearchAgent}},
-  year =         {2025}
+@misc{zhang2025agentorchestrahierarchicalmultiagentframework,
+      title={AgentOrchestra: A Hierarchical Multi-Agent Framework for General-Purpose Task Solving}, 
+      author={Wentao Zhang and Ce Cui and Yilei Zhao and Yang Liu and Bo An},
+      year={2025},
+      eprint={2506.12508},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2506.12508}, 
 }
 ```

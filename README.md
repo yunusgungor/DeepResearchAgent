@@ -44,7 +44,7 @@ The system adopts a two-layer structure:
   
 
 ## Updates
-
+* **2025.06.17**: Update technical report https://arxiv.org/pdf/2506.12508.
 * **2025.06.01**: Update the browser-use to 0.1.48.
 * **2025.05.30**: Convert the sub agent to a function call. Planning agent can now be gpt-4.1 or gemini-2.5-pro.
 * **2025.05.27**: Support OpenAI, Anthropic, Google LLMs, and local Qwen models (via vLLM, see details in [Usage](#usage)).
@@ -219,11 +219,14 @@ Contributions and suggestions are welcome! Feel free to open issues or submit pu
 ## Cite
 
 ```bibtex
-@misc{DeepResearchAgent,
-  title =        {`DeepResearchAgent`: A Hierarchical Multi-Agent Framework for General-purpose Task Solving.},
-  author =       {Wentao Zhang, Ce Cui, Yang Liu, Bo An},
-  howpublished = {\url{https://github.com/SkyworkAI/DeepResearchAgent}},
-  year =         {2025}
+@misc{zhang2025agentorchestrahierarchicalmultiagentframework,
+      title={AgentOrchestra: A Hierarchical Multi-Agent Framework for General-Purpose Task Solving}, 
+      author={Wentao Zhang and Ce Cui and Yilei Zhao and Yang Liu and Bo An},
+      year={2025},
+      eprint={2506.12508},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2506.12508}, 
 }
 ```
 

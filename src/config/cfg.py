@@ -8,45 +8,67 @@ load_dotenv(verbose=True)
 
 from src.utils import assemble_project_path
 
-class SearcherToolConfig(BaseModel):
-    engine: str = Field(default="Google", description="Search engine the llm to use")
-    fallback_engines: List[str] = Field(default_factory=lambda: ["DuckDuckGo", "Baidu", "Bing"], description="Fallback search engines to try if the primary engine fails")
-    retry_delay: int = Field(default=10, description="Seconds to wait before retrying all engines again after they all fail")
-    max_retries: int = Field(default=3, description="Maximum number of times to retry all engines when all fail")
-    lang: str = Field(default="en", description="Language code for search results (e.g., en, zh, fr)")
-    country: str = Field(default="us",description="Country code for search results (e.g., us, cn, uk)")
-    filter_year: int = Field(default=None, description="Filter results by year (0 for no filter)")
-    num_results: int = Field(default=5, description="Number of search results to return")
-    fetch_content: bool = Field(default=False, description="Whether to fetch content from the search results")
-    max_length: int = Field(default=50000, description="Maximum character length for the content to be fetched")
+class WebSearchToolConfig(BaseModel):
+    engine: Optional[str] = Field(default=None,
+                                  description="Search engine the llm to use")
+    fallback_engines: Optional[List[str]] = Field(default=None,
+                                                  description="Fallback search engines to try if the primary engine fails")
+    retry_delay: Optional[int] = Field(default=None,
+                                       description="Seconds to wait before retrying all engines again after they all fail")
+    max_retries: Optional[int] = Field(default=None,
+                                       description="Maximum number of times to retry all engines when all fail")
+    lang: Optional[str] = Field(default=None,
+                                description="Language code for search results (e.g., en, zh, fr)")
+    country: Optional[str] = Field(default=None,
+                                   description="Country code for search results (e.g., us, cn, uk)")
+    filter_year: Optional[int] = Field(default=None,
+                                       description="Filter results by year (0 for no filter)")
+    num_results: Optional[int] = Field(default=None,
+                                       description="Number of search results to return")
+    fetch_content: Optional[bool]= Field(default=None,
+                                         description="Whether to fetch content from the search results")
+    max_length: Optional[int] = Field(default=None,
+                                      description="Maximum character length for the content to be fetched")
 
 class DeepResearcherToolConfig(BaseModel):
-    model_id: str = Field(default="gpt-4.1", description="Model ID for the LLM to use")
-    max_depth: int = Field(default=2, description="Maximum depth for the search")
-    max_insights: int = Field(default=20, description="Maximum number of insights to extract")
-    time_limit_seconds: int = Field(default=60, description="Time limit for the search in seconds")
-    max_follow_ups: int = Field(default=3, description="Maximum number of follow-up questions to ask")
+    model_id: Optional[str] = Field(default=None,
+                                    description="Model ID for the LLM to use")
+    max_depth: Optional[int] = Field(default=None,
+                                     description="Maximum depth for the search")
+    max_insights: Optional[int] = Field(default=None,
+                                        description="Maximum number of insights to extract")
+    time_limit_seconds: Optional[int] = Field(default=None,
+                                              description="Time limit for the search in seconds")
+    max_follow_ups: Optional[int] = Field(default=None,
+                                          description="Maximum number of follow-up questions to ask")
 
 class BrowserToolConfig(BaseModel):
-    model_id: str = Field(default="gpt-4.1", description="Model ID for the LLM to use")
-    headless: bool = Field(False, description="Whether to run browser in headless mode")
-    disable_security: bool = Field(True, description="Disable browser security features")
-    extra_chromium_args: List[str] = Field(default_factory=list, description="Extra arguments to pass to the browser")
-    chrome_instance_path: Optional[str] = Field(None, description="Path to a Chrome instance to use")
-    wss_url: Optional[str] = Field(None, description="Connect to a browser instance via WebSocket")
-    cdp_url: Optional[str] = Field(None, description="Connect to a browser instance via CDP")
-    use_proxy: bool = Field(False, description="Whether to use a proxy")
-    proxy: Optional[Dict[str, Any]] = Field(default_factory=lambda : {
-        "server": "xxxx",
-        "username": "xxxx",
-        "password": "xxxx",
-    }, description="Proxy settings for the browser")
-    max_length: int = Field(default=50000, description="Maximum character length for the content to be fetched")
+    model_id: Optional[str] = Field(default=None,
+                                    description="Model ID for the LLM to use")
+    headless: Optional[bool] = Field(default=None,
+                                     description="Whether to run browser in headless mode")
+    disable_security: Optional[bool] = Field(default=None,
+                                             description="Disable browser security features")
+    extra_chromium_args: Optional[List[str]] = Field(default=None,
+                                                     description="Extra arguments to pass to the browser")
+    chrome_instance_path: Optional[str] = Field(default=None,
+                                                description="Path to a Chrome instance to use")
+    wss_url: Optional[str] = Field(default=MemoryError,
+                                   description="Connect to a browser instance via WebSocket")
+    cdp_url: Optional[str] = Field(default=None,
+                                   description="Connect to a browser instance via CDP")
+    use_proxy: Optional[bool] = Field(default=None,
+                                      description="Whether to use a proxy")
+    proxy: Optional[Dict[str, Any]] = Field(default = None,
+                                            description="Proxy settings for the browser")
+    max_length: Optional[int] = Field(default=None,
+                                      description="Maximum character length for the content to be fetched")
 
 class DeepAnalyzerToolConfig(BaseModel):
-    analyzer_model_ids: List[str] = Field(default_factory=lambda: ["gemini-2.5-pro", "o3"], description="Model IDs for the LLMs to use")
-    summarizer_model_id: str = Field(default="gemini-2.5-pro", description="Model ID for the LLM to use")
-
+    analyzer_model_ids: Optional[List[str]] = Field(default = None,
+                                                    description="Model IDs for the LLMs to use")
+    summarizer_model_id: Optional[str] = Field(default=None,
+                                               description="Model ID for the LLM to use")
 class AgentConfig(BaseModel):
     model_id: str = Field(default="gpt-4.1",
                           description="Model ID for the LLM to use")
@@ -117,7 +139,7 @@ class Config(BaseModel):
     save_path: str = Field(default="agentscope.jsonl", description="Path to save the answers")
     
     # Tool Config
-    searcher_tool: SearcherToolConfig = Field(default_factory=SearcherToolConfig)
+    web_search_tool: WebSearchToolConfig = Field(default_factory=WebSearchToolConfig)
     deep_researcher_tool: DeepResearcherToolConfig = Field(default_factory=DeepResearcherToolConfig)
     browser_tool: BrowserToolConfig = Field(default_factory=BrowserToolConfig)
     deep_analyzer_tool: DeepAnalyzerToolConfig = Field(default_factory=DeepAnalyzerToolConfig)
@@ -152,7 +174,7 @@ class Config(BaseModel):
         self.save_path = os.path.join(self.workdir, self.save_path)
             
         # Tool Config
-        self.searcher_tool = SearcherToolConfig(**config["searcher_tool"])
+        self.web_search_tool = WebSearchToolConfig(**config["web_search_tool"])
         self.deep_researcher_tool = DeepResearcherToolConfig(**config["deep_researcher_tool"])
         self.browser_tool = BrowserToolConfig(**config["browser_tool"])
         self.deep_analyzer_tool = DeepAnalyzerToolConfig(**config["deep_analyzer_tool"])
