@@ -216,7 +216,7 @@ DeepResearchAgent 主要借鉴了 smolagents 的架构设计，并在此基础�
 ```bibtex
 @misc{zhang2025agentorchestrahierarchicalmultiagentframework,
       title={AgentOrchestra: A Hierarchical Multi-Agent Framework for General-Purpose Task Solving}, 
-      author={Wentao Zhang and Ce Cui and Yilei Zhao and Yang Liu and Bo An},
+      author={Wentao Zhang, Ce Cui, Yilei Zhao, Rui Hu, Yang Liu, Yahui Zhou, Bo An},
       year={2025},
       eprint={2506.12508},
       archivePrefix={arXiv},
