@@ -8,11 +8,11 @@ DeepResearchAgent is a hierarchical multi-agent system designed not only for dee
 
 ## Architecture
 
-[//]: # (<p align="center">)
+<p align="center">
 
-[//]: # (  <img src="./docs/architecture.png" alt="Architecture" width="700"/>)
+  <img src="./docs/architecture.png" alt="Architecture" width="700"/>
 
-[//]: # (</p>)
+</p>
 
 The system adopts a two-layer structure:
 
