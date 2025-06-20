@@ -383,6 +383,19 @@ class Model:
         """
         pass  # To be implemented in child classes!
 
+    def parse_tool_calls(self, message: ChatMessage) -> ChatMessage:
+        """Sometimes APIs do not return the tool call as a specific object, so we need to parse it."""
+        message.role = MessageRole.ASSISTANT  # Overwrite role if needed
+        if not message.tool_calls:
+            assert message.content is not None, "Message contains no content and no tool calls"
+            message.tool_calls = [
+                get_tool_call_from_text(message.content, self.tool_name_key, self.tool_arguments_key)
+            ]
+        assert len(message.tool_calls) > 0, "No tool call was found in the model output"
+        for tool_call in message.tool_calls:
+            tool_call.function.arguments = parse_json_if_needed(tool_call.function.arguments)
+        return message
+
     def to_dict(self) -> Dict:
         """
         Converts the model into a JSON-compatible dictionary.
