@@ -81,7 +81,7 @@ def get_tasks_to_run(answers_file, dataset) -> List[dict]:
 
 async def answer_single_question(example, answers_file):
 
-    agent = create_agent()
+    agent = await create_agent()
 
     logger.info(f"Task Id: {example['task_id']}, Final Answer: {example['true_answer']}")
 

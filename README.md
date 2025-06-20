@@ -44,6 +44,7 @@ The system adopts a two-layer structure:
   
 
 ## Updates
+* **2025.06.20**: Add the support for the mcp (Both the local mcp and remote mcp).
 * **2025.06.17**: Update technical report https://arxiv.org/pdf/2506.12508.
 * **2025.06.01**: Update the browser-use to 0.1.48.
 * **2025.05.30**: Convert the sub agent to a function call. Planning agent can now be gpt-4.1 or gemini-2.5-pro.
@@ -53,7 +54,7 @@ The system adopts a two-layer structure:
 
 * [x] Asynchronous feature completed
 * [ ] Image Generation Agent to be developed
-* [ ] MCP in progress
+* [x] MCP in progress
 * [ ] AI4Research Agent to be developed
 * [ ] Novel Writing Agent to be developed
 
@@ -234,4 +235,4 @@ Contributions and suggestions are welcome! Feel free to open issues or submit pu
 
 ### 🇨🇳 中文版说明文档
 
-如果你更习惯阅读中文说明文档，请查阅 [README.zh.md](./README.zh.md)。
+如果你更习惯阅读中文说明文档，请查阅 [README_CN.md](./README_CN.md)。

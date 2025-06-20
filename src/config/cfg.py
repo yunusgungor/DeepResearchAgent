@@ -80,14 +80,26 @@ class AgentConfig(BaseModel):
                            description="Maximum number of steps the agent can take")
     template_path: str = Field(default="", 
                                description="Path to the template file for the agent")
-    tools: List[str] = Field(default_factory=lambda: [], 
+    tools: List[str] = Field(default_factory=lambda: [],
                             description="List of tools the agent can use")
+    mcp_tools: List[str] = Field(default_factory=lambda: [],
+                                description="List of MCP tools the agent can use")
     managed_agents: List[str] = Field(default_factory=lambda: [], 
                                       description="List of agents the agent can manage")
 
 class HierarchicalAgentConfig(BaseModel):
     name: str = Field(default="dra", description="Name of the hierarchical agent")
     use_hierarchical_agent: bool = Field(default=True, description="Whether to use hierarchical agent")
+
+    general_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
+        model_id="gpt-4.1",
+        name="general_agent",
+        description="A general agent that can perform various tasks and manage other agents.",
+        max_steps=20,
+        template_path=assemble_project_path("src/agent/general_agent/prompts/general_agent.yaml"),
+        tools=["python_interpreter"],
+        mcp_tools=["get_weather"],
+    ))
     planning_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
         model_id="gpt-4.1",
         name="planning_agent",
@@ -95,6 +107,7 @@ class HierarchicalAgentConfig(BaseModel):
         max_steps=20,
         template_path=assemble_project_path("src/agent/planning_agent/prompts/planning_agent.yaml"),
         tools=['planning'],
+        mcp_tools=[],
         managed_agents=["deep_analyzer_agent", "browser_use_agent", "deep_researcher_agent"],
     ))
     deep_analyzer_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
@@ -104,6 +117,7 @@ class HierarchicalAgentConfig(BaseModel):
         max_steps=3,
         template_path=assemble_project_path("src/agent/deep_analyzer_agent/prompts/deep_analyzer_agent.yaml"),
         tools=["deep_analyzer", "python_interpreter"],
+        mcp_tools=[],
     ))
     browser_use_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
         model_id="gpt-4.1",
@@ -112,6 +126,7 @@ class HierarchicalAgentConfig(BaseModel):
         max_steps=5,
         template_path=assemble_project_path("src/agent/browser_use_agent/prompts/browser_use_agent.yaml"),
         tools=["auto_browser_use", "python_interpreter"],
+        mcp_tools=[],
     ))
     deep_researcher_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
         model_id="gpt-4.1",
@@ -120,6 +135,7 @@ class HierarchicalAgentConfig(BaseModel):
         max_steps=3,
         template_path=assemble_project_path("src/agent/deep_researcher_agent/prompts/deep_researcher_agent.yaml"),
         tools=["deep_researcher", "python_interpreter"],
+        mcp_tools=[],
     ))
 
 class DatasetConfig(BaseModel):
@@ -143,6 +159,21 @@ class Config(BaseModel):
     deep_researcher_tool: DeepResearcherToolConfig = Field(default_factory=DeepResearcherToolConfig)
     browser_tool: BrowserToolConfig = Field(default_factory=BrowserToolConfig)
     deep_analyzer_tool: DeepAnalyzerToolConfig = Field(default_factory=DeepAnalyzerToolConfig)
+    mcp_tools: Dict[str, Any] = Field(default = {
+        "mcpServers": {
+            # Local stdio server
+            "get_weather": {
+                "command": "python",
+                "args": [str(assemble_project_path("src/mcp/server.py"))],
+                "env": {"DEBUG": "true"}
+            },
+            # Remote server
+            # "calendar": {
+            #     "url": "https://calendar-api.example.com/mcp",
+            #     "transport": "streamable-http"
+            # }
+        }
+    })
     
     # Agent Config
     agent: HierarchicalAgentConfig = Field(default_factory=HierarchicalAgentConfig)
@@ -180,6 +211,8 @@ class Config(BaseModel):
         self.deep_analyzer_tool = DeepAnalyzerToolConfig(**config["deep_analyzer_tool"])
 
         # Agent Config
+        general_agent_config = AgentConfig(**config["agent"]["general_agent_config"])
+        general_agent_config.template_path = assemble_project_path(config["agent"]["general_agent_config"]["template_path"])
         planning_agent_config = AgentConfig(**config["agent"]["planning_agent_config"])
         planning_agent_config.template_path = assemble_project_path(config["agent"]["planning_agent_config"]["template_path"])
         deep_analyzer_agent_config = AgentConfig(**config["agent"]["deep_analyzer_agent_config"])
@@ -191,6 +224,7 @@ class Config(BaseModel):
         self.agent = HierarchicalAgentConfig(
             name=config["agent"]["name"],
             use_hierarchical_agent=config["agent"]["use_hierarchical_agent"],
+            general_agent_config=general_agent_config,
             planning_agent_config=planning_agent_config,
             deep_analyzer_agent_config=deep_analyzer_agent_config,
             browser_use_agent_config=browser_use_agent_config,

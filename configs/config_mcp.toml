@@ -1,12 +1,12 @@
 # General Config
-tag = "hle"
-concurrency = 1
+tag = "mcp"
+concurrency = 4
 workdir = "workdir"
 log_path = "log.txt"
 download_path = "downloads_folder"
-use_local_proxy = true
-split = "test"
-save_path = "ssa.jsonl"
+use_local_proxy = false # true for local proxy, false for public proxy
+split = "validation"
+save_path = "dra.jsonl"
 
 # Tool Config
 [web_search_tool]
@@ -49,8 +49,8 @@ summarizer_model_id = "gemini-2.5-pro"
 
 # Agent configs
 [agent]
-name = "ssa"
-use_hierarchical_agent = true
+name = "dra"
+use_hierarchical_agent = false
 
 [agent.general_agent_config]
 model_id = "gpt-4.1"
@@ -62,20 +62,20 @@ tools = ["python_interpreter"]
 mcp_tools = ["get_weather"]
 
 [agent.planning_agent_config]
-model_id = "claude37-sonnet-thinking"
+model_id = "gpt-4.1"
 name = "planning_agent"
 description = "A planning agent that can plan the steps to complete the task."
 max_steps = 20
 template_path = "src/agent/planning_agent/prompts/planning_agent.yaml"
 tools = ["planning"]
-managed_agents = ["deep_analyzer_agent", "deep_researcher_agent"]
+managed_agents = ["deep_analyzer_agent", "browser_use_agent", "deep_researcher_agent"]
 mcp_tools = []
 
 [agent.deep_analyzer_agent_config]
-model_id = "claude37-sonnet-thinking"
+model_id = "gpt-4.1"
 name = "deep_analyzer_agent"
 description = "Performs systematic, step-by-step analysis..."
-max_steps = 1
+max_steps = 3
 template_path = "src/agent/deep_analyzer_agent/prompts/deep_analyzer_agent.yaml"
 tools = ["deep_analyzer", "python_interpreter"]
 mcp_tools = []
@@ -90,7 +90,7 @@ tools = ["auto_browser_use", "python_interpreter"]
 mcp_tools = []
 
 [agent.deep_researcher_agent_config]
-model_id = "claude37-sonnet-thinking"
+model_id = "gpt-4.1"
 name = "deep_researcher_agent"
 description = "Conducts extensive web searches."
 max_steps = 3
@@ -99,5 +99,5 @@ tools = ["deep_researcher", "python_interpreter"]
 mcp_tools = []
 
 [dataset]
-name = "hle"
-path = "data/hle"
+name = "2023_all"
+path = "data/GAIA"
