@@ -301,6 +301,14 @@ class ModelManager(metaclass=Singleton):
                     "model_id": "gemini-2.5-pro-preview-05-06",
                 },
                 {
+                    "model_name": "gemini-2.5-flash",
+                    "model_id": "gemini/gemini-2.5-flash",
+                },
+                {
+                    "model_name": "Gemini",
+                    "model_id": "gemini/gemini-2.5-flash",
+                },
+                {
                     "model_name": "gemini-2.0-flash",
                     "model_id": "gemini/gemini-1.5-pro",
                 },

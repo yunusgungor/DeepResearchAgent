@@ -17,7 +17,7 @@ from src.utils import assemble_project_path
 
 async def main():
     # Init config and logger
-    config.init_config(config_path=assemble_project_path("./configs/config_qwen.toml"))
+    config.init_config(config_path=assemble_project_path("./configs/config_gemini.toml"))
     logger.init_logger(config.log_path)
     logger.info(f"Initializing logger: {config.log_path}")
     logger.info(f"Load config: {config}")
@@ -27,7 +27,7 @@ async def main():
     logger.info("Registed models: %s", ", ".join(model_manager.registed_models.keys()))
     
     # Create agent
-    agent = create_agent()
+    agent = await create_agent()
 
     # Default task
     default_task = "Use deep_researcher_agent to search the latest papers on the topic of 'AI Agent' and then summarize it."
