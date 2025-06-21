@@ -69,12 +69,18 @@ class AutoBrowserUseTool(AsyncTool):
 
         model_id = self.browser_tool_config.model_id
 
-        assert model_id in ['gpt-4.1'], f"Model should be in [gpt-4.1, ], but got {model_id}. Please check your config file."
+        # Desteklenen modelleri genişlet
+        supported_models = ['gpt-4.1', 'gpt-4o', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-2.5-pro']
+        assert model_id in supported_models, f"Model should be in {supported_models}, but got {model_id}. Please check your config file."
 
-        if "langchain" not in model_id:
-            model_id = f"langchain-{model_id}"
+        # LangChain model adını oluştur
+        langchain_model_id = f"langchain-{model_id}"
+        
+        # Model var mı kontrol et
+        if langchain_model_id not in model_manager.registed_models:
+            raise ValueError(f"Model '{langchain_model_id}' not found in registered models. Available models: {list(model_manager.registed_models.keys())}")
 
-        model = model_manager.registed_models[model_id]
+        model = model_manager.registed_models[langchain_model_id]
 
         browser_agent = Agent(
             task=task,

@@ -356,8 +356,8 @@ class ModelManager(metaclass=Singleton):
             self.registed_models[model_name] = model
 
     def _register_langchain_models(self, use_local_proxy: bool = False):
-        # langchain models
-        models = [
+        # langchain models - OpenAI models
+        openai_models = [
             {
                 "model_name": "langchain-gpt-4o",
                 "model_id": "gpt-4o",
@@ -371,22 +371,53 @@ class ModelManager(metaclass=Singleton):
                 "model_id": "o3",
             },
         ]
+        
+        # langchain models - Google models
+        google_models = [
+            {
+                "model_name": "langchain-gemini-2.5-flash",
+                "model_id": "gemini/gemini-2.5-flash",
+            },
+            {
+                "model_name": "langchain-gemini-1.5-pro",
+                "model_id": "gemini/gemini-1.5-pro",
+            },
+            {
+                "model_name": "langchain-gemini-2.5-pro",
+                "model_id": "gemini-2.5-pro-preview-05-06",
+            },
+        ]
 
         if use_local_proxy:
             logger.info("Using local proxy for LangChain models")
-            api_key = self._check_local_api_key(local_api_key_name="SKYWORK_API_KEY",
+            # OpenAI models için local proxy
+            openai_api_key = self._check_local_api_key(local_api_key_name="SKYWORK_API_KEY",
                                                 remote_api_key_name="OPENAI_API_KEY")
-            api_base = self._check_local_api_base(local_api_base_name="SKYWORK_API_BASE",
+            openai_api_base = self._check_local_api_base(local_api_base_name="SKYWORK_API_BASE",
                                                     remote_api_base_name="OPENAI_API_BASE")
 
-            for model in models:
+            for model in openai_models:
                 model_name = model["model_name"]
                 model_id = model["model_id"]
 
                 model = ChatOpenAI(
                     model=model_id,
-                    api_key=api_key,
-                    base_url=api_base,
+                    api_key=openai_api_key,
+                    base_url=openai_api_base,
+                    http_client=HTTP_CLIENT,
+                    http_async_client=ASYNC_HTTP_CLIENT,
+                )
+                self.registed_models[model_name] = model
+                
+            # Google models için local proxy (şimdilik OpenAI API ile)
+            for model in google_models:
+                model_name = model["model_name"]
+                model_id = model["model_id"]
+
+                model = ChatOpenAI(
+                    model=model_id,
+                    api_key=openai_api_key,
+                    base_url=openai_api_base,
                     http_client=HTTP_CLIENT,
                     http_async_client=ASYNC_HTTP_CLIENT,
                 )
@@ -394,21 +425,51 @@ class ModelManager(metaclass=Singleton):
 
         else:
             logger.info("Using remote API for LangChain models")
-            api_key = self._check_local_api_key(local_api_key_name="OPENAI_API_KEY",
+            # OpenAI models
+            openai_api_key = self._check_local_api_key(local_api_key_name="OPENAI_API_KEY",
                                                 remote_api_key_name="OPENAI_API_KEY")
-            api_base = self._check_local_api_base(local_api_base_name="OPENAI_API_BASE",
+            openai_api_base = self._check_local_api_base(local_api_base_name="OPENAI_API_BASE",
                                                     remote_api_base_name="OPENAI_API_BASE")
 
-            for model in models:
+            for model in openai_models:
                 model_name = model["model_name"]
                 model_id = model["model_id"]
 
                 model = ChatOpenAI(
                     model=model_id,
-                    api_key=api_key,
-                    base_url=api_base,
+                    api_key=openai_api_key,
+                    base_url=openai_api_base,
                 )
                 self.registed_models[model_name] = model
+                
+            # Google models için LangChain Google ChatGoogleGenerativeAI kullan
+            try:
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                google_api_key = self._check_local_api_key(local_api_key_name="GOOGLE_API_KEY",
+                                                    remote_api_key_name="GOOGLE_API_KEY")
+                
+                for model in google_models:
+                    model_name = model["model_name"]
+                    model_id = model["model_id"].replace("gemini/", "")  # Remove prefix for Google API
+                    
+                    model = ChatGoogleGenerativeAI(
+                        model=model_id,
+                        google_api_key=google_api_key,
+                    )
+                    self.registed_models[model_name] = model
+                    
+            except ImportError:
+                logger.warning("langchain_google_genai not available, skipping Google LangChain models")
+                # Fallback: Google models'i LiteLLM ile kaydet
+                for model in google_models:
+                    model_name = model["model_name"]
+                    model_id = model["model_id"]
+                    
+                    model = LiteLLMModel(
+                        model_id=model_id,
+                        custom_role_conversions=custom_role_conversions,
+                    )
+                    self.registed_models[model_name] = model
     def _register_vllm_models(self, use_local_proxy: bool = False):
         # qwen
         api_key = self._check_local_api_key(local_api_key_name="QWEN_API_KEY", 

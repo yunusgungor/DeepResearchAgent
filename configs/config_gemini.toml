@@ -47,6 +47,12 @@ password = "xxxx"
 analyzer_model_ids = ["gemini-2.5-flash"]
 summarizer_model_id = "gemini-2.5-flash"
 
+[auto_browser_tool]
+model_id = "gemini-2.5-flash"
+timeout = 30
+viewport_width = 1024
+viewport_height = 768
+
 # Agent configs
 [agent]
 name = "dra"

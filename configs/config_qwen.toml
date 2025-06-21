@@ -47,6 +47,12 @@ password = "xxxx"
 analyzer_model_ids = ["Qwen"]
 summarizer_model_id = "Qwen"
 
+[auto_browser_tool]
+model_id = "gpt-4.1"
+timeout = 30
+viewport_width = 1024
+viewport_height = 768
+
 # Agent configs
 [agent]
 name = "dra"
