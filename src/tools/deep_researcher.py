@@ -270,7 +270,21 @@ class DeepResearcherTool(AsyncTool):
             else 3
         )
 
-        self.model = model_manager.registed_models[self.deep_researcher_tool_config.model_id]
+        # Model ID kontrolü ve varsayılan model atama
+        model_id = None
+        if self.deep_researcher_tool_config and hasattr(self.deep_researcher_tool_config, 'model_id'):
+            model_id = self.deep_researcher_tool_config.model_id
+        
+        # Eğer model_id None ise veya kayıtlı değilse varsayılan modeli kullan
+        if model_id is None or model_id not in model_manager.registed_models:
+            # Kayıtlı modeller arasından ilkini varsayılan olarak seç
+            if model_manager.registed_models:
+                model_id = list(model_manager.registed_models.keys())[0]
+                logger.warning(f"DeepResearcherTool: Model ID bulunamadı, varsayılan model kullanılıyor: {model_id}")
+            else:
+                raise ValueError("DeepResearcherTool: Hiç kayıtlı model bulunamadı!")
+        
+        self.model = model_manager.registed_models[model_id]
         self.web_searcher = WebSearcherTool()
         self.web_searcher.fetch_content = True # Enable content fetching
         super(DeepResearcherTool, self).__init__()

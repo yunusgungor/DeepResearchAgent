@@ -2,6 +2,23 @@
 
 English | [简体中文](README_CN.md)
 
+## 🌟 Web UI Available!
+
+**NEW**: Modern web interface now available! Use DeepResearchAgent with a beautiful, user-friendly web UI.
+
+```bash
+# Quick start Web UI
+./install_webui.sh
+cd web_ui
+python launcher.py
+```
+
+🔗 **Access at**: http://localhost:8501  
+📚 **Features**: Chat interface, tool management, dashboard, settings  
+📖 **Documentation**: [Web UI Guide](WEB_UI_README.md)
+
+---
+
 ## Introduction
 
 DeepResearchAgent is a hierarchical multi-agent system designed not only for deep research tasks but also for general-purpose task solving. The framework leverages a top-level planning agent to coordinate multiple specialized lower-level agents, enabling automated task decomposition and efficient execution across diverse and complex domains.
@@ -237,4 +254,4 @@ Contributions and suggestions are welcome! Feel free to open issues or submit pu
 
 ### 🇨🇳 中文版说明文档
 
-如果你更习惯阅读中文说明文档，请查阅 [README_CN.md](./README_CN.md)。
+如果你更习惯阅读中文说明文档，请查阅 [README_CN.md](./README_CN.md)

@@ -1,0 +1,66 @@
+# Web UI için basit config
+tag = "webui"
+concurrency = 2
+workdir = "workdir"
+log_path = "log.txt"
+download_path = "downloads_folder"
+use_local_proxy = false
+split = "validation"
+save_path = "dra.jsonl"
+
+# Model Config - Mock model for testing
+[models]
+mock_model = "openai"
+
+[openai]
+api_key = "demo-key"
+model_name = "gpt-3.5-turbo"
+temperature = 0.1
+max_tokens = 1000
+timeout = 30
+
+# Tool Config
+[web_search_tool]
+engine = "Google"
+fallback_engines = ["DuckDuckGo"]
+retry_delay = 5
+max_retries = 2
+lang = "en"
+country = "us"
+filter_year = 0
+num_results = 3
+
+[deep_researcher_tool]
+model_id = "mock_model"
+max_depth = 2
+max_insights = 10
+time_limit_seconds = 60
+max_follow_ups = 2
+
+[deep_analyzer_tool]
+analyzer_model_ids = ["mock_model"]
+summarizer_model_id = "mock_model"
+
+[python_interpreter_tool]
+model_id = "mock_model"
+timeout = 30
+max_iterations = 5
+result_window_size = 800
+
+[auto_browser_tool]
+model_id = "mock_model"
+timeout = 30
+viewport_width = 1024
+viewport_height = 768
+
+[planning_tool]
+model_id = "mock_model"
+timeout = 30
+max_steps = 10
+
+[browser_use_tool]
+model_id = "mock_model"
+timeout = 30
+
+[default_agent]
+model_id = "mock_model"

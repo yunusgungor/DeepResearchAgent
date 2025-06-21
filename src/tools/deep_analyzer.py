@@ -60,11 +60,34 @@ class DeepAnalyzerTool(AsyncTool):
 
         self.analyzer_config = config.deep_analyzer_tool
 
-        self.analyzer_models = {
-            model_id: model_manager.registed_models[model_id]
-            for model_id in self.analyzer_config.analyzer_model_ids
-        }
-        self.summary_model = model_manager.registed_models[self.analyzer_config.summarizer_model_id]
+        # Analyzer models kontrolü ve varsayılan atama
+        self.analyzer_models = {}
+        if self.analyzer_config and hasattr(self.analyzer_config, 'analyzer_model_ids') and self.analyzer_config.analyzer_model_ids:
+            for model_id in self.analyzer_config.analyzer_model_ids:
+                if model_id in model_manager.registed_models:
+                    self.analyzer_models[model_id] = model_manager.registed_models[model_id]
+                else:
+                    logger.warning(f"DeepAnalyzerTool: Model {model_id} kayıtlı değil, atlanıyor")
+        
+        # Eğer hiç analyzer model bulunamazsa varsayılan modeli kullan
+        if not self.analyzer_models and model_manager.registed_models:
+            default_model_id = list(model_manager.registed_models.keys())[0]
+            self.analyzer_models[default_model_id] = model_manager.registed_models[default_model_id]
+            logger.warning(f"DeepAnalyzerTool: Varsayılan analyzer model kullanılıyor: {default_model_id}")
+        
+        # Summary model kontrolü
+        summary_model_id = None
+        if self.analyzer_config and hasattr(self.analyzer_config, 'summarizer_model_id'):
+            summary_model_id = self.analyzer_config.summarizer_model_id
+        
+        if summary_model_id is None or summary_model_id not in model_manager.registed_models:
+            if model_manager.registed_models:
+                summary_model_id = list(model_manager.registed_models.keys())[0]
+                logger.warning(f"DeepAnalyzerTool: Varsayılan summary model kullanılıyor: {summary_model_id}")
+            else:
+                raise ValueError("DeepAnalyzerTool: Hiç kayıtlı model bulunamadı!")
+        
+        self.summary_model = model_manager.registed_models[summary_model_id]
 
         self.converter: MarkitdownConverter = MarkitdownConverter(
             use_llm=False,
