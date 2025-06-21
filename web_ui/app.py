@@ -62,6 +62,28 @@ class WebUIConfig:
         if config_dir.exists():
             return [f.stem for f in config_dir.glob("*.toml") if f.name != "config_example.toml"]
         return ["config_gemini", "config_gaia", "config_hle", "config_mcp", "config_qwen"]
+    
+    def check_api_keys(self) -> Dict[str, bool]:
+        """API anahtarlarının durumunu kontrol et"""
+        try:
+            import os
+            api_keys_status = {
+                "GOOGLE_API_KEY": bool(os.environ.get("GOOGLE_API_KEY")),
+                "OPENAI_API_KEY": bool(os.environ.get("OPENAI_API_KEY")),
+                "ANTHROPIC_API_KEY": bool(os.environ.get("ANTHROPIC_API_KEY")),
+                "QWEN_API_KEY": bool(os.environ.get("QWEN_API_KEY", "")),
+                "SERPER_API_KEY": bool(os.environ.get("SERPER_API_KEY")),
+            }
+            return api_keys_status
+        except Exception as e:
+            logger.error(f"API anahtarları kontrol edilirken hata: {e}")
+            return {
+                "GOOGLE_API_KEY": False,
+                "OPENAI_API_KEY": False,
+                "ANTHROPIC_API_KEY": False,
+                "QWEN_API_KEY": False,
+                "SERPER_API_KEY": False,
+            }
 
 
 class AgentManager:
@@ -102,10 +124,12 @@ class AgentManager:
             
             # Monitoring callback'ini agent'a ekle
             if not self.step_callback_added and self.current_agent:
+                logger.info(f"Agent monitoring callback sistemi kurulıyor...")
+                
                 # Agent'ın step_callbacks listesine monitoring callback'ini ekle
                 def monitoring_step_callback(step):
                     """Agent step callback'i için monitoring entegrasyonu"""
-                    import asyncio
+                    logger.info(f"Agent step callback çağrıldı: {step}")
                     
                     # Step verilerini detaylı monitoring formatına çevir
                     step_data = {
@@ -127,12 +151,20 @@ class AgentManager:
                     # Monitoring sistemine ekle
                     self._handle_detailed_step(step_data)
                 
-                # Agent'ın step_callbacks listesine ekle
-                self.current_agent.step_callbacks.append(monitoring_step_callback)
+                # Agent'ın mevcut step_callbacks listesini kontrol et
+                if hasattr(self.current_agent, 'step_callbacks'):
+                    logger.info(f"Agent step_callbacks listesi mevcut: {len(self.current_agent.step_callbacks)} callback")
+                    self.current_agent.step_callbacks.append(monitoring_step_callback)
+                else:
+                    logger.warning("Agent step_callbacks listesi bulunamadı!")
+                    # Eğer yoksa oluştur
+                    self.current_agent.step_callbacks = [monitoring_step_callback]
                 
                 # Global monitor callback de ekle
                 monitor.add_step_callback(self._handle_detailed_step)
                 self.step_callback_added = True
+                
+                logger.info(f"Monitoring callback sistemi kuruldu!")
             
             return True
         except Exception as e:
@@ -141,11 +173,14 @@ class AgentManager:
     
     def _handle_detailed_step(self, step_data):
         """Detaylı adım verilerini işle"""
+        logger.info(f"Detaylı adım alındı: {step_data.get('title', 'Bilinmeyen')}")
         self.detailed_steps.append(step_data)
         
         # Step type'a göre genel adımları güncelle
         step_type = step_data.get('step_type', '')
         title = step_data.get('title', '')
+        
+        logger.info(f"Toplam detaylı adım sayısı: {len(self.detailed_steps)}")
         description = step_data.get('description', '')
         
         # Ana adım kategorilerine dönüştür
@@ -177,7 +212,7 @@ class AgentManager:
     async def run_task(self, task: str) -> str:
         """Görevi çalıştır ve adımları izle"""
         if not self.is_initialized or not self.current_agent:
-            return "Agent henüz başlatılmamış!"
+            return "❌ **Agent henüz başlatılmamış!**\n\nLütfen önce sol panelden bir agent seçin ve başlatın."
         
         self.current_task_steps = []
         self.current_step_status = "running"
@@ -194,11 +229,42 @@ class AgentManager:
             self.current_step_status = "completed"
             self.step_progress = 100
             
-            return str(result)
+            # Sonucu markdown formatında düzenle
+            formatted_result = self._format_result(result, task)
+            return formatted_result
+            
         except Exception as e:
             self.add_step("❌ Hata Oluştu", f"Hata: {str(e)}", "hata")
             self.current_step_status = "error" 
-            return f"Görev çalıştırılırken hata oluştu: {str(e)}"
+            return f"❌ **Görev çalıştırılırken hata oluştu:**\n\n```\n{str(e)}\n```\n\nLütfen tekrar deneyin."
+    
+    def _format_result(self, result: any, task: str) -> str:
+        """Sonucu güzel formatlama"""
+        formatted = f"## 🎯 Görev Sonucu\n\n"
+        formatted += f"**📝 Görev:** {task}\n\n"
+        formatted += f"**⏰ Tamamlanma Zamanı:** {datetime.now().strftime('%H:%M:%S')}\n\n"
+        formatted += "---\n\n"
+        
+        # Result'ı string'e çevir ve formatlama
+        result_str = str(result)
+        
+        # Eğer sonuç çok uzunsa bölümler halinde düzenle
+        if len(result_str) > 1000:
+            formatted += "### 📊 Detaylı Sonuçlar\n\n"
+            
+            # Paragrafları ayır
+            paragraphs = result_str.split('\n\n')
+            for i, paragraph in enumerate(paragraphs):
+                if paragraph.strip():
+                    formatted += f"{paragraph.strip()}\n\n"
+        else:
+            formatted += f"### 💡 Sonuç\n\n{result_str}\n\n"
+        
+        formatted += "---\n\n"
+        formatted += f"✅ **Durum:** Başarıyla tamamlandı\n"
+        formatted += f"📈 **İşlem Adımları:** {len(self.current_task_steps)} adım\n"
+        
+        return formatted
     
     def add_step(self, title: str, description: str, status: str):
         """Adım ekle"""
@@ -218,30 +284,47 @@ class AgentManager:
     async def _run_with_monitoring(self, task: str):
         """Görev çalıştırma ve izleme"""
         try:
+            # Başlangıç adımı
+            self.add_step("🚀 Görev Başlatılıyor", f"Görev: {task}", "başlatıldı")
+            self.current_step_status = "running"
+            
+            # Debug: Agent durumunu kontrol et
+            logger.info(f"Agent durumu: initialized={self.is_initialized}, agent={self.current_agent}")
+            logger.info(f"Agent çalıştırılıyor: {task}")
+            
             # Monitoring başlat
             monitor.start_task(f"webui_{int(time.time())}", task)
             
-            # Agent'ı gerçek olarak çalıştır
-            result = self.current_agent.run(task)
+            # Agent'ı çalıştır
+            self.add_step("🤖 Agent Çalışıyor", "Görev analiz ediliyor ve plan hazırlanıyor", "çalışıyor")
+            
+            # Agent'ın run metodunu await ile çağır
+            logger.info(f"Agent.run() çağrılıyor...")
+            result = await self.current_agent.run(task)
+            logger.info(f"Agent.run() tamamlandı, sonuç uzunluğu: {len(str(result)) if result else 0}")
+            
+            # Başarı adımı
+            self.add_step("✅ Görev Tamamlandı", "Agent görevi başarıyla tamamladı", "tamamlandı")
+            self.current_step_status = "completed"
             
             # Monitoring bitir
             monitor.end_task(success=True, result=str(result)[:200])
             
+            logger.info(f"Agent sonucu: {str(result)[:100]}...")
+            
             return result
             
         except Exception as e:
+            # Hata adımı
+            self.add_step("❌ Hata Oluştu", f"Agent çalışırken hata: {str(e)}", "hata")
+            self.current_step_status = "error"
+            
             # Hata durumunda monitoring'i bitir
             monitor.end_task(success=False, result=f"Hata: {str(e)}")
+            
+            logger.error(f"Agent hatası: {e}")
+            logger.error(f"Hata detayı: ", exc_info=True)
             raise e
-        
-        # Gerçek agent çalıştırma
-        result = await self.current_agent.run(task)
-        
-        # Sonuç işleme
-        self.add_step("📊 Sonuç İşleniyor", "Sonuçlar düzenleniyor ve formatlanıyor", "çalışıyor")
-        await asyncio.sleep(0.5)
-        
-        return result
 
 
 class ToolManager:
@@ -352,6 +435,36 @@ def display_sidebar():
         st.title("🧠 DeepResearchAgent")
         st.markdown("---")
         
+        # API Anahtarı Durumu Kontrolü
+        api_check_result = st.session_state.ui_config.check_api_keys()
+        
+        # En az bir API anahtarının olup olmadığını kontrol et
+        has_any_api_key = any(api_check_result.values())
+        
+        if not has_any_api_key:
+            st.error("⚠️ **API Hatası:** Hiç API anahtarı bulunamadı!")
+            st.info("💡 **Çözüm:** En az bir API anahtarını ortam değişkenlerinizde ayarlayın.")
+            
+            # API anahtarı durumlarını göster
+            with st.expander("🔑 API Anahtarları Durumu", expanded=True):
+                for api_name, status in api_check_result.items():
+                    status_icon = "✅" if status else "❌"
+                    st.write(f"{status_icon} {api_name}: {'Var' if status else 'Yok'}")
+                
+                st.markdown("**Ortam değişkenlerinizi kontrol edin:**")
+                st.code("""
+export GOOGLE_API_KEY="your_google_api_key"
+export OPENAI_API_KEY="your_openai_api_key"
+export ANTHROPIC_API_KEY="your_anthropic_api_key"
+export SERPER_API_KEY="your_serper_api_key"
+                """)
+            
+            return  # API anahtarı yoksa diğer kontrolleri gösterme
+        else:
+            # Mevcut API anahtarlarını göster
+            active_apis = [name for name, status in api_check_result.items() if status]
+            st.success(f"✅ API Anahtarları: {', '.join(active_apis)}")
+        
         # Konfigürasyon seçimi
         st.subheader("⚙️ Konfigürasyon")
         config_options = st.session_state.ui_config.available_configs
@@ -431,6 +544,12 @@ def display_chat_interface():
     """Sohbet arayüzünü göster"""
     st.header("💬 AI Agent ile Sohbet")
     
+    # Agent durumu kontrolü
+    if not st.session_state.agent_manager.is_initialized:
+        st.warning("⚠️ **Agent henüz başlatılmamış!** Sol panelden bir agent seçin ve başlatın.")
+        st.info("💡 **Nasıl başlarım?**\n1. Sol panelden agent türünü seçin\n2. Konfigürasyon dosyasını seçin\n3. '🚀 Başlat' butonuna tıklayın")
+        return
+    
     # Tool'ları yükle (config yüklendikten sonra)
     if not st.session_state.tool_manager.tools_loaded:
         with st.spinner("Araçlar yükleniyor..."):
@@ -442,6 +561,11 @@ def display_chat_interface():
     with col1:
         # Sohbet geçmişini göster
         st.subheader("💭 Sohbet Geçmişi")
+        
+        # Eğer henüz mesaj yoksa öneri göster
+        if not st.session_state.chat_history:
+            st.info("💬 **İlk mesajınızı gönderin!**\n\nAşağıdaki örnek görevlerden birini seçebilir veya kendi sorunuzu yazabilirsiniz.")
+        
         chat_container = st.container()
         
         with chat_container:
@@ -455,12 +579,47 @@ def display_chat_interface():
                         </div>
                         """, unsafe_allow_html=True)
                     else:
-                        st.markdown(f"""
-                        <div style='background-color: #f3e5f5; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #9c27b0;'>
-                            <strong>🤖 Agent:</strong> {message['content']}<br>
-                            <small style='color: #666;'>🕒 {message['timestamp']}</small>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        # Agent cevabını daha güzel formatlama
+                        content = message['content']
+                        
+                        # Uzun metinleri expander içinde göster
+                        if len(content) > 500:
+                            with st.expander(f"🤖 Agent Cevabı - {message['timestamp']}", expanded=True):
+                                # Markdown formatında göster
+                                st.markdown(content)
+                                
+                                # Eğer task history'de steps varsa göster
+                                task_index = i // 2  # Her user-assistant çifti için index
+                                if task_index < len(st.session_state.task_history):
+                                    task_data = st.session_state.task_history[task_index]
+                                    if 'steps' in task_data and task_data['steps']:
+                                        with st.expander("🔍 İşlem Adımları", expanded=False):
+                                            for step in task_data['steps']:
+                                                step_title = step.get('title', 'Bilinmeyen')
+                                                step_desc = step.get('description', '')
+                                                step_status = step.get('status', 'unknown')
+                                                
+                                                # Status'a göre emoji
+                                                if step_status == 'tamamlandı':
+                                                    emoji = '✅'
+                                                elif step_status == 'çalışıyor':
+                                                    emoji = '⏳'
+                                                elif step_status == 'hata':
+                                                    emoji = '❌'
+                                                else:
+                                                    emoji = '🔄'
+                                                
+                                                st.markdown(f"**{emoji} {step_title}**")
+                                                if step_desc:
+                                                    st.caption(step_desc)
+                        else:
+                            st.markdown(f"""
+                            <div style='background-color: #f3e5f5; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #9c27b0;'>
+                                <strong>🤖 Agent:</strong><br>
+                                <div style='margin-top: 10px;'>{content}</div>
+                                <small style='color: #666;'>🕒 {message['timestamp']}</small>
+                            </div>
+                            """, unsafe_allow_html=True)
                 st.divider()
     
     with col2:
@@ -523,12 +682,29 @@ def display_chat_interface():
             
             # Agent'dan cevap al - Gerçek zamanlı izleme ile
             with st.spinner("🤔 Agent düşünüyor..."):
-                # Adım takibi için placeholder
-                status_placeholder = st.empty()
-                progress_placeholder = st.empty()
+                # Progress tracking için placeholders
+                progress_container = st.container()
                 
-                # Task çalıştır
-                response = asyncio.run(st.session_state.agent_manager.run_task(user_input))
+                with progress_container:
+                    # Progress bar ve status
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    step_details = st.empty()
+                    
+                    # Task başlat
+                    status_text.text("🚀 Görev başlatılıyor...")
+                    progress_bar.progress(10)
+                    
+                    # Task çalıştır
+                    response = asyncio.run(st.session_state.agent_manager.run_task(user_input))
+                    
+                    # Tamamlandı göstergesi
+                    progress_bar.progress(100)
+                    status_text.text("✅ Görev tamamlandı!")
+                    
+                    # Progress container'ı temizle
+                    time.sleep(1)
+                    progress_container.empty()
             
             # Agent cevabını ekle
             st.session_state.chat_history.append({
@@ -821,11 +997,9 @@ def display_dashboard():
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric(
-            "Agent Durumu",
-            "Aktif" if st.session_state.agent_manager.is_initialized else "Pasif",
-            delta="✅" if st.session_state.agent_manager.is_initialized else "❌"
-        )
+        agent_status = "Aktif" if st.session_state.agent_manager.is_initialized else "Pasif"
+        agent_delta = "✅" if st.session_state.agent_manager.is_initialized else "❌"
+        st.metric("Agent Durumu", agent_status, delta=agent_delta)
     
     with col2:
         st.metric("Toplam Görev", len(st.session_state.task_history))
@@ -836,22 +1010,65 @@ def display_dashboard():
     with col4:
         st.metric("Mevcut Araçlar", len(st.session_state.tool_manager.tools))
     
+    # Performans metrikleri
+    st.subheader("📈 Performans Metrikleri")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # Başarılı görevler
+        successful_tasks = sum(1 for task in st.session_state.task_history 
+                             if not task.get('result', '').startswith('❌'))
+        success_rate = (successful_tasks / len(st.session_state.task_history) * 100) if st.session_state.task_history else 0
+        st.metric("Başarı Oranı", f"{success_rate:.1f}%")
+    
+    with col2:
+        # Ortalama görev süresi (yaklaşık)
+        avg_steps = sum(len(task.get('steps', [])) for task in st.session_state.task_history) / len(st.session_state.task_history) if st.session_state.task_history else 0
+        st.metric("Ort. Adım Sayısı", f"{avg_steps:.1f}")
+    
+    with col3:
+        # Son 24 saat içindeki görevler
+        recent_tasks = len([task for task in st.session_state.task_history 
+                          if datetime.fromisoformat(task['timestamp']).date() == datetime.now().date()])
+        st.metric("Bugünkü Görevler", recent_tasks)
+    
     # Real-time Agent İzleme
     col1, col2 = st.columns([2, 1])
     
     with col1:
         # Detaylı görev geçmişi
         if st.session_state.task_history:
-            st.subheader("📝 Detaylı Görev Geçmişi")
-            for i, task in enumerate(reversed(st.session_state.task_history[-5:])):
-                with st.expander(f"Görev {len(st.session_state.task_history) - i}: {task['task'][:50]}..."):
-                    st.write(f"**Görev:** {task['task']}")
-                    st.write(f"**Sonuç:** {task['result'][:200]}...")
-                    st.caption(f"Zaman: {task['timestamp']}")
+            st.subheader("📝 Son Görevler")
+            
+            # Sadece son 5 görevi göster
+            recent_tasks = list(reversed(st.session_state.task_history[-5:]))
+            
+            for i, task in enumerate(recent_tasks):
+                # Başarı durumunu kontrol et
+                is_success = not task.get('result', '').startswith('❌')
+                status_icon = "✅" if is_success else "❌"
+                status_color = "#28a745" if is_success else "#dc3545"
+                
+                with st.expander(f"{status_icon} Görev {len(st.session_state.task_history) - i}: {task['task'][:60]}..."):
+                    st.markdown(f"**📝 Görev:** {task['task']}")
+                    
+                    # Sonucu formatted şekilde göster
+                    if len(task['result']) > 300:
+                        st.markdown("**📊 Sonuç:**")
+                        st.markdown(task['result'][:300] + "...")
+                        if st.button(f"Tamamını Göster", key=f"show_full_{i}"):
+                            st.markdown(task['result'])
+                    else:
+                        st.markdown("**📊 Sonuç:**")
+                        st.markdown(task['result'])
+                    
+                    # Zaman bilgisi
+                    timestamp = datetime.fromisoformat(task['timestamp'])
+                    st.caption(f"🕒 {timestamp.strftime('%d/%m/%Y %H:%M:%S')}")
                     
                     # Adım detayları varsa göster
                     if 'steps' in task and task['steps']:
-                        st.subheader("🔄 Görev Adımları")
+                        st.markdown("**🔄 İşlem Adımları:**")
                         for step in task['steps']:
                             status_icon = {
                                 "başlatıldı": "🔵",
@@ -865,7 +1082,7 @@ def display_dashboard():
                             {step['description']}  
                             *{step['timestamp']}*
                             """)
-    
+
     with col2:
         # Anlık agent durumu
         st.subheader("🔄 Anlık Agent Durumu")
@@ -1171,6 +1388,31 @@ def display_documentation():
         """)
 
 
+def update_api_key(api_key: str) -> bool:
+    """API anahtarını config dosyasına kaydet"""
+    try:
+        import toml
+        config_path = assemble_project_path("./configs/config_webui.toml")
+        
+        # Mevcut config'i oku
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config_data = toml.load(f)
+        
+        # API anahtarını güncelle
+        if 'google' not in config_data:
+            config_data['google'] = {}
+        config_data['google']['api_key'] = api_key
+        
+        # Config'i kaydet
+        with open(config_path, 'w', encoding='utf-8') as f:
+            toml.dump(config_data, f)
+        
+        return True
+    except Exception as e:
+        logger.error(f"API anahtarı kaydedilemedi: {e}")
+        return False
+
+
 def main():
     """Ana uygulama fonksiyonu"""
     st.set_page_config(
@@ -1273,9 +1515,6 @@ def main():
                             # Debug için step bilgisi göster
                             if converted_steps:
                                 logger.info(f"UI Debug: İlk step - {converted_steps[0]['title']}: {converted_steps[0]['description']}")
-                                # Streamlit'te de debug mesajı göster
-                                st.success(f"🔄 {len(converted_steps)} adet step yüklendi! İlk step: {converted_steps[0]['title']}")
-                    
             except Exception as e:
                 logger.debug(f"UI: Steps endpoint hatası: {e}")
             

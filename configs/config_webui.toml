@@ -1,4 +1,3 @@
-# Web UI için Gemini config
 tag = "webui"
 concurrency = 2
 workdir = "workdir"
@@ -8,21 +7,16 @@ use_local_proxy = false
 split = "validation"
 save_path = "dra.jsonl"
 
-# Model Config - Gemini 2.5 Flash
-[models]
-gemini-2.5-flash = "google"
-
 [google]
-api_key = "PLACEHOLDER"
+api_key = "AIzaSyDcPf4frVf4Avb-ZgiwudDCtGmFWqxWIVM"
 model_name = "gemini-2.5-flash"
 temperature = 0.1
 max_tokens = 1000
 timeout = 30
 
-# Tool Config
 [web_search_tool]
 engine = "Google"
-fallback_engines = ["DuckDuckGo"]
+fallback_engines = [ "DuckDuckGo",]
 retry_delay = 5
 max_retries = 2
 lang = "en"
@@ -38,7 +32,7 @@ time_limit_seconds = 60
 max_follow_ups = 2
 
 [deep_analyzer_tool]
-analyzer_model_ids = ["gemini-2.5-flash"]
+analyzer_model_ids = [ "gemini-2.5-flash",]
 summarizer_model_id = "gemini-2.5-flash"
 
 [python_interpreter_tool]
@@ -74,14 +68,21 @@ model_id = "gemini-2.5-flash"
 name = "dra"
 use_hierarchical_agent = true
 
+[dataset]
+name = "webui_test"
+path = "data/test"
+
+[models.gemini-2]
+5-flash = "google"
+
 [agent.general_agent_config]
 model_id = "gemini-2.5-flash"
 name = "general_agent"
 description = "A general agent that can perform various tasks and manage other agents."
 max_steps = 20
 template_path = "src/agent/general_agent/prompts/general_agent.yaml"
-tools = ["python_interpreter"]
-mcp_tools = ["get_weather"]
+tools = [ "python_interpreter",]
+mcp_tools = [ "get_weather",]
 
 [agent.planning_agent_config]
 model_id = "gemini-2.5-flash"
@@ -89,8 +90,8 @@ name = "planning_agent"
 description = "A planning agent that can plan the steps to complete the task."
 max_steps = 20
 template_path = "src/agent/planning_agent/prompts/planning_agent.yaml"
-tools = ["planning"]
-managed_agents = ["deep_analyzer_agent", "browser_use_agent", "deep_researcher_agent"]
+tools = [ "planning",]
+managed_agents = [ "deep_analyzer_agent", "browser_use_agent", "deep_researcher_agent",]
 mcp_tools = []
 
 [agent.deep_analyzer_agent_config]
@@ -99,7 +100,7 @@ name = "deep_analyzer_agent"
 description = "Performs systematic, step-by-step analysis of a given task."
 max_steps = 3
 template_path = "src/agent/deep_analyzer_agent/prompts/deep_analyzer_agent.yaml"
-tools = ["deep_analyzer", "python_interpreter"]
+tools = [ "deep_analyzer", "python_interpreter",]
 mcp_tools = []
 
 [agent.browser_use_agent_config]
@@ -108,7 +109,7 @@ name = "browser_use_agent"
 description = "Searches relevant web pages and interacts with them to find answers."
 max_steps = 5
 template_path = "src/agent/browser_use_agent/prompts/browser_use_agent.yaml"
-tools = ["auto_browser_use", "python_interpreter"]
+tools = [ "auto_browser_use", "python_interpreter",]
 mcp_tools = []
 
 [agent.deep_researcher_agent_config]
@@ -117,9 +118,5 @@ name = "deep_researcher_agent"
 description = "Conducts extensive web searches to complete tasks."
 max_steps = 3
 template_path = "src/agent/deep_researcher_agent/prompts/deep_researcher_agent.yaml"
-tools = ["deep_researcher", "python_interpreter"]
+tools = [ "deep_researcher", "python_interpreter",]
 mcp_tools = []
-
-[dataset]
-name = "webui_test"
-path = "data/test"
