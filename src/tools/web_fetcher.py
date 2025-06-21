@@ -51,7 +51,7 @@ class WebFetcherTool(AsyncTool):
         super(WebFetcherTool, self).__init__()
         self.converter = MarkitdownConverter(
             use_llm=False,
-            model_id="gpt-4.1",
+            model_id="gemini-2.5-flash",
             timeout=30,
         )
 

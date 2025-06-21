@@ -28,10 +28,18 @@ from src.logger import logger
 from src.models import model_manager
 from src.registry import REGISTED_AGENTS, REGISTED_TOOLS
 from src.utils import assemble_project_path
-from src.tools.deep_researcher import DeepResearcherTool
-from src.tools.deep_analyzer import DeepAnalyzerTool
-from src.tools.auto_browser import AutoBrowserUseTool
-from src.tools.python_interpreter import PythonInterpreterTool
+
+# Config'i hemen initialize et
+config_path = assemble_project_path("./configs/config_webui.toml")
+config.init_config(config_path=config_path)
+logger.info(f"Web UI: Config yüklendi: {config_path}")
+
+# Model manager'ı initialize et
+try:
+    model_manager.init_models(use_local_proxy=config.use_local_proxy)
+    logger.info(f"Model manager initialized with {len(model_manager.registed_models)} models")
+except Exception as e:
+    logger.warning(f"Model manager initialization failed: {e}")
 
 
 class WebUIConfig:
@@ -40,7 +48,7 @@ class WebUIConfig:
     def __init__(self):
         self.available_configs = self._get_available_configs()
         self.available_models = [
-            "gemini-1.5-pro", "gemini-2.5-pro", "gpt-4.1", "gpt-4o", 
+            "gemini-2.5-flash", "gemini-1.5-pro", "gemini-2.5-pro", "gpt-4.1", "gpt-4o", 
             "claude-3.7-sonnet", "qwen2.5-7b-instruct", "qwen2.5-14b-instruct"
         ]
         self.agent_types = list(REGISTED_AGENTS.keys())
@@ -65,12 +73,22 @@ class AgentManager:
         """Agent'ı başlat"""
         try:
             if config_path:
+                logger.info(f"Agent Manager: Config path verildi: {config_path}")
                 config.init_config(config_path=config_path)
             else:
-                config.init_config(config_path=assemble_project_path("./configs/config_gemini.toml"))
+                # Web UI için özel config dosyasını kullan
+                webui_config_path = assemble_project_path("./configs/config_webui.toml")
+                logger.info(f"Agent Manager: Varsayılan config kullanılıyor: {webui_config_path}")
+                config.init_config(config_path=webui_config_path)
+            
+            logger.info(f"Agent Manager: Config yüklendi, deep_researcher_tool config: {config.deep_researcher_tool}")
             
             logger.init_logger(config.log_path)
             model_manager.init_models(use_local_proxy=config.use_local_proxy)
+            
+            # Model kontrolü
+            if not model_manager.registed_models:
+                raise ValueError("Hiç model kayıtlı değil! API anahtarlarını kontrol edin.")
             
             self.current_agent = await create_agent()
             self.is_initialized = True
@@ -96,6 +114,13 @@ class ToolManager:
     
     def __init__(self):
         self.tools = {}
+        self.tools_loaded = False
+    
+    def load_tools(self):
+        """Tool'ları config yüklendikten sonra yükle"""
+        if self.tools_loaded:
+            return
+            
         try:
             # Temel araçları güvenli şekilde yükle
             from src.tools.web_searcher import WebSearcherTool
@@ -110,21 +135,26 @@ class ToolManager:
             try:
                 from src.tools.deep_researcher import DeepResearcherTool
                 self.tools["deep_researcher"] = DeepResearcherTool()
+                st.success("Deep Researcher Tool başarıyla yüklendi")
             except Exception as e:
                 st.warning(f"Deep Researcher Tool yüklenemedi: {str(e)}")
             
             try:
                 from src.tools.deep_analyzer import DeepAnalyzerTool  
                 self.tools["deep_analyzer"] = DeepAnalyzerTool()
+                st.success("Deep Analyzer Tool başarıyla yüklendi")
             except Exception as e:
                 st.warning(f"Deep Analyzer Tool yüklenemedi: {str(e)}")
             
             try:
                 from src.tools.auto_browser import AutoBrowserUseTool
                 self.tools["auto_browser"] = AutoBrowserUseTool()
+                st.success("Auto Browser Tool başarıyla yüklendi")
             except Exception as e:
                 st.warning(f"Auto Browser Tool yüklenemedi: {str(e)}")
                 
+            self.tools_loaded = True
+            
         except Exception as e:
             st.error(f"Araçlar yüklenirken genel hata: {str(e)}")
             # En azından boş araç listesi tut
@@ -247,6 +277,11 @@ def display_main_interface():
 def display_chat_interface():
     """Sohbet arayüzünü göster"""
     st.header("💬 AI Agent ile Sohbet")
+    
+    # Tool'ları yükle (config yüklendikten sonra)
+    if not st.session_state.tool_manager.tools_loaded:
+        with st.spinner("Araçlar yükleniyor..."):
+            st.session_state.tool_manager.load_tools()
     
     # Sohbet geçmişini göster
     for i, message in enumerate(st.session_state.chat_history):

@@ -30,7 +30,7 @@ class FileReaderTool(AsyncTool):
 
         self.converter: MarkitdownConverter = MarkitdownConverter(
             use_llm=False,
-            model_id="gpt-4.1",
+            model_id="gemini-2.5-flash",
             timeout = 30
         )
 

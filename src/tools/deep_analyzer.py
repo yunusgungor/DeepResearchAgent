@@ -71,7 +71,19 @@ class DeepAnalyzerTool(AsyncTool):
         
         # Eğer hiç analyzer model bulunamazsa varsayılan modeli kullan
         if not self.analyzer_models and model_manager.registed_models:
-            default_model_id = list(model_manager.registed_models.keys())[0]
+            # Önce Gemini 2.5 Flash'ı ara
+            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gpt-4o", "gpt-4"]
+            default_model_id = None
+            
+            for preferred in preferred_models:
+                if preferred in model_manager.registed_models:
+                    default_model_id = preferred
+                    break
+            
+            # Hiçbiri bulunamazsa ilk kayıtlı modeli kullan
+            if default_model_id is None:
+                default_model_id = list(model_manager.registed_models.keys())[0]
+            
             self.analyzer_models[default_model_id] = model_manager.registed_models[default_model_id]
             logger.warning(f"DeepAnalyzerTool: Varsayılan analyzer model kullanılıyor: {default_model_id}")
         
@@ -81,8 +93,19 @@ class DeepAnalyzerTool(AsyncTool):
             summary_model_id = self.analyzer_config.summarizer_model_id
         
         if summary_model_id is None or summary_model_id not in model_manager.registed_models:
-            if model_manager.registed_models:
+            # Önce Gemini 2.5 Flash'ı ara
+            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gpt-4o", "gpt-4"]
+            
+            for preferred in preferred_models:
+                if preferred in model_manager.registed_models:
+                    summary_model_id = preferred
+                    break
+            
+            # Hiçbiri bulunamazsa ilk kayıtlı modeli kullan
+            if summary_model_id is None and model_manager.registed_models:
                 summary_model_id = list(model_manager.registed_models.keys())[0]
+            
+            if summary_model_id:
                 logger.warning(f"DeepAnalyzerTool: Varsayılan summary model kullanılıyor: {summary_model_id}")
             else:
                 raise ValueError("DeepAnalyzerTool: Hiç kayıtlı model bulunamadı!")
@@ -91,7 +114,7 @@ class DeepAnalyzerTool(AsyncTool):
 
         self.converter: MarkitdownConverter = MarkitdownConverter(
             use_llm=False,
-            model_id="gpt-4.1",
+            model_id="gemini-2.5-flash",
             timeout=30,
         )
 

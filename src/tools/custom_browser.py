@@ -191,7 +191,7 @@ class BrowserUseTool(AsyncTool, Generic[Context]):
         self.web_searcher.fetch_content = False  # not fetch content
         converter = MarkitdownConverter(
             use_llm=False,
-            model_id="gpt-4.1",
+            model_id="gemini-2.5-flash",
             timeout=30,
         )
         self.converter = converter

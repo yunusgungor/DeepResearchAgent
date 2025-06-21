@@ -92,7 +92,7 @@ class HierarchicalAgentConfig(BaseModel):
     use_hierarchical_agent: bool = Field(default=True, description="Whether to use hierarchical agent")
 
     general_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
-        model_id="gpt-4.1",
+        model_id="gemini-2.5-flash",
         name="general_agent",
         description="A general agent that can perform various tasks and manage other agents.",
         max_steps=20,
@@ -101,7 +101,7 @@ class HierarchicalAgentConfig(BaseModel):
         mcp_tools=["get_weather"],
     ))
     planning_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
-        model_id="gpt-4.1",
+        model_id="gemini-2.5-flash",
         name="planning_agent",
         description="A planning agent that can plan the steps to complete the task.",
         max_steps=20,
@@ -111,7 +111,7 @@ class HierarchicalAgentConfig(BaseModel):
         managed_agents=["deep_analyzer_agent", "browser_use_agent", "deep_researcher_agent"],
     ))
     deep_analyzer_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
-        model_id="gpt-4.1",
+        model_id="gemini-2.5-flash",
         name="deep_analyzer_agent",
         description="A team member that that performs systematic, step-by-step analysis of a given task, optionally leveraging information from external resources such as attached file or uri to provide comprehensive reasoning and answers. For any tasks that require in-depth analysis, particularly those involving attached file or uri, game, chess, computational tasks, or any other complex tasks. Please ask him for the reasoning and the final answer.",
         max_steps=3,
@@ -120,7 +120,7 @@ class HierarchicalAgentConfig(BaseModel):
         mcp_tools=[],
     ))
     browser_use_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
-        model_id="gpt-4.1",
+        model_id="gemini-2.5-flash",
         name="browser_use_agent",
         description="A team member that can search the most relevant web pages and interact with them to find answers to tasks, specializing in precise information retrieval and accurate page-level interactions. Please ask this member to get the answers from the web when high accuracy and detailed extraction are required.",
         max_steps=5,
@@ -129,7 +129,7 @@ class HierarchicalAgentConfig(BaseModel):
         mcp_tools=[],
     ))
     deep_researcher_agent_config: AgentConfig = Field(default_factory=lambda: AgentConfig(
-        model_id="gpt-4.1",
+        model_id="gemini-2.5-flash",
         name="deep_researcher_agent",
         description="A team member capable of conducting extensive web searches to complete tasks, primarily focused on retrieving broad and preliminary information for quickly understanding a topic or obtaining rough answers. For tasks that require precise, structured, or interactive page-level information retrieval, please use the `browser_use_agent`.",
         max_steps=3,

@@ -274,12 +274,34 @@ class DeepResearcherTool(AsyncTool):
         model_id = None
         if self.deep_researcher_tool_config and hasattr(self.deep_researcher_tool_config, 'model_id'):
             model_id = self.deep_researcher_tool_config.model_id
+            logger.info(f"DeepResearcherTool: Config'den model_id okundu: {model_id}")
+        else:
+            logger.warning(f"DeepResearcherTool: Config bulunamadı veya model_id yok. Config: {self.deep_researcher_tool_config}")
+        
+        # Model_id kontrolü
+        if model_id is not None:
+            logger.info(f"DeepResearcherTool: Kayıtlı modeller: {list(model_manager.registed_models.keys())}")
+            if model_id in model_manager.registed_models:
+                logger.info(f"DeepResearcherTool: Model {model_id} başarıyla bulundu")
+            else:
+                logger.warning(f"DeepResearcherTool: Model {model_id} kayıtlı modeller arasında bulunamadı")
         
         # Eğer model_id None ise veya kayıtlı değilse varsayılan modeli kullan
         if model_id is None or model_id not in model_manager.registed_models:
-            # Kayıtlı modeller arasından ilkini varsayılan olarak seç
-            if model_manager.registed_models:
+            # Önce Gemini 2.5 Flash'ı ara
+            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gpt-4o", "gpt-4"]
+            model_id = None
+            
+            for preferred in preferred_models:
+                if preferred in model_manager.registed_models:
+                    model_id = preferred
+                    break
+            
+            # Hiçbiri bulunamazsa ilk kayıtlı modeli kullan
+            if model_id is None and model_manager.registed_models:
                 model_id = list(model_manager.registed_models.keys())[0]
+            
+            if model_id:
                 logger.warning(f"DeepResearcherTool: Model ID bulunamadı, varsayılan model kullanılıyor: {model_id}")
             else:
                 raise ValueError("DeepResearcherTool: Hiç kayıtlı model bulunamadı!")
