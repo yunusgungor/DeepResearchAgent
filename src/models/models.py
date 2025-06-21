@@ -137,6 +137,15 @@ class ModelManager(metaclass=Singleton):
             api_base = self._check_local_api_base(local_api_base_name="OPENAI_API_BASE", 
                                                     remote_api_base_name="OPENAI_API_BASE")
             
+            # Check if API key and base are properly set
+            if api_key == PLACEHOLDER:
+                logger.error("OpenAI API key is not set. Please set OPENAI_API_KEY in your environment variables.")
+                return
+            
+            if api_base == PLACEHOLDER:
+                logger.error("OpenAI API base is not set. Please set OPENAI_API_BASE in your environment variables.")
+                return
+            
             models = [
                 {
                     "model_name": "gpt-4o",
@@ -290,6 +299,14 @@ class ModelManager(metaclass=Singleton):
                 {
                     "model_name": "gemini-2.5-pro",
                     "model_id": "gemini-2.5-pro-preview-05-06",
+                },
+                {
+                    "model_name": "gemini-2.0-flash",
+                    "model_id": "gemini/gemini-1.5-pro",
+                },
+                {
+                    "model_name": "gemini-1.5-pro",
+                    "model_id": "gemini/gemini-1.5-pro",
                 },
             ]
             

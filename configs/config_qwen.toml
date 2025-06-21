@@ -52,6 +52,15 @@ summarizer_model_id = "Qwen"
 name = "dra"
 use_hierarchical_agent = true
 
+[agent.general_agent_config]
+model_id = "Qwen"
+name = "general_agent"
+description = "A general agent that can handle various tasks."
+max_steps = 20
+template_path = "src/agent/general_agent/prompts/general_agent.yaml"
+tools = ["python_interpreter"]
+mcp_tools = []
+
 [agent.planning_agent_config]
 model_id = "Qwen"
 name = "planning_agent"
@@ -60,6 +69,7 @@ max_steps = 15
 template_path = "src/agent/planning_agent/prompts/planning_agent.yaml"
 tools = ["planning"]
 managed_agents = ["deep_analyzer_agent", "browser_use_agent", "deep_researcher_agent"]
+mcp_tools = []
 
 [agent.deep_analyzer_agent_config]
 model_id = "Qwen"
@@ -68,6 +78,7 @@ description = "Performs systematic, step-by-step analysis..."
 max_steps = 3
 template_path = "src/agent/deep_analyzer_agent/prompts/deep_analyzer_agent.yaml"
 tools = ["deep_analyzer", "python_interpreter"]
+mcp_tools = []
 
 [agent.browser_use_agent_config]
 model_id = "Qwen"
@@ -76,6 +87,7 @@ description = "Searches relevant web pages and interacts with them."
 max_steps = 5
 template_path = "src/agent/browser_use_agent/prompts/browser_use_agent.yaml"
 tools = ["auto_browser_use", "python_interpreter"]
+mcp_tools = []
 
 [agent.deep_researcher_agent_config]
 model_id = "Qwen"
@@ -84,6 +96,7 @@ description = "Conducts extensive web searches."
 max_steps = 3
 template_path = "src/agent/deep_researcher_agent/prompts/deep_researcher_agent.yaml"
 tools = ["deep_researcher", "python_interpreter"]
+mcp_tools = []
 
 [dataset]
 name = "2023_all"

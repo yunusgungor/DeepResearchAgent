@@ -1,6 +1,7 @@
 import json
 import re
 import time
+import asyncio
 from typing import List, Optional, Set, Tuple
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -334,6 +335,9 @@ class DeepResearcherTool(AsyncTool):
                 messages = messages,
                 tools_to_call_from=tools
             )
+            
+            # Add delay to prevent rate limiting
+            await asyncio.sleep(2)
 
             logger.info(f"DeepResearchTool Optimized query - Input tokens: {self.model.last_input_token_count}, Output tokens: {self.model.last_output_token_count}")
 
@@ -497,6 +501,9 @@ class DeepResearcherTool(AsyncTool):
             messages=messages,
             tools_to_call_from=tools
         )
+        
+        # Add delay to prevent rate limiting
+        await asyncio.sleep(2)
 
         logger.info(f"DeepResearchTool Generate follow-ups - Input tokens: {self.model.last_input_token_count}, Output tokens: {self.model.last_output_token_count}")
 
@@ -527,6 +534,9 @@ class DeepResearcherTool(AsyncTool):
             messages=messages,
             tools_to_call_from=tools
         )
+        
+        # Add delay to prevent rate limiting
+        await asyncio.sleep(2)
 
         logger.info(f"DeepResearchTool Extract insights - Input tokens: {self.model.last_input_token_count}, Output tokens: {self.model.last_output_token_count}")
 

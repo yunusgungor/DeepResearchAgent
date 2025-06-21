@@ -181,7 +181,7 @@ class Config(BaseModel):
     # Dataset Config
     dataset: DatasetConfig = Field(default_factory=DatasetConfig)
     
-    def init_config(self, config_path: "config.toml"):
+    def init_config(self, config_path: str):
         
         with open(config_path, "r") as f:
             config = toml.load(f)
