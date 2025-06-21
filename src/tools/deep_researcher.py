@@ -102,12 +102,12 @@ class ResearchSummary(BaseModel):
         """Populate the output field after validation."""
         # Group and sort insights by relevance
         grouped_insights = {
-            "Key Findings": [i for i in self.insights if i.relevance_score >= 0.8],
+            "Key Findings": [i for i in self.insights if (i.relevance_score or 0) >= 0.8],
             "Additional Information": [
-                i for i in self.insights if 0.5 <= i.relevance_score < 0.8
+                i for i in self.insights if 0.5 <= (i.relevance_score or 0) < 0.8
             ],
             "Supplementary Information": [
-                i for i in self.insights if i.relevance_score < 0.5
+                i for i in self.insights if (i.relevance_score or 0) < 0.5
             ],
         }
 
@@ -288,8 +288,8 @@ class DeepResearcherTool(AsyncTool):
         
         # Eğer model_id None ise veya kayıtlı değilse varsayılan modeli kullan
         if model_id is None or model_id not in model_manager.registed_models:
-            # Önce Gemini 2.5 Flash'ı ara
-            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gpt-4o", "gpt-4"]
+            # Sadece Gemini modellerini tercih et
+            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
             model_id = None
             
             for preferred in preferred_models:
@@ -331,7 +331,8 @@ class DeepResearcherTool(AsyncTool):
                                  deadline=deadline
                                  )
         except Exception as e:
-            res_str = f"DeepResearchTool failed to complete the research cycle: {str(e)}"
+            import traceback
+            res_str = f"DeepResearchTool failed to complete the research cycle: {str(e)}\nTraceback: {traceback.format_exc()}"
             logger.error(res_str)
             return ToolResult(
                 output=None,
@@ -409,7 +410,8 @@ class DeepResearcherTool(AsyncTool):
     ) -> None:
         """Run a complete research cycle (search, analyze, generate follow-ups)."""
         # Check termination conditions
-        if time.time() >= deadline or context.current_depth >= context.max_depth:
+        max_depth = context.max_depth if context.max_depth is not None else 3
+        if time.time() >= deadline or context.current_depth >= max_depth:
             return
 
         logger.info(f"DeepResearchTool Research cycle at depth {context.current_depth + 1} - Query: {query}")
@@ -613,7 +615,8 @@ class DeepResearcherTool(AsyncTool):
 
     async def _summary(self, query: str, reference_materials: str) -> str:
 
-        model = model_manager.registed_models['gpt-4o-search-preview']
+        # Mevcut model'i kullan (genellikle Gemini 2.5 Flash)
+        model = self.model
 
         messages = [
             {"role": "user", "content": query}

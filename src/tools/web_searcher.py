@@ -283,12 +283,17 @@ class WebSearcherTool(AsyncTool):
     async def _fetch_single_result_content(self, result: SearchResult) -> SearchResult:
         """Fetch content for a single search result."""
         if result.url:
-            res = await self.content_fetcher.forward(result.url)
-            content = res.text_content
-            if content:
-                if len(content) > self.max_length:
-                    content = content[: self.max_length] + "..."
-                result.raw_content = content
+            try:
+                res = await self.content_fetcher.forward(result.url)
+                if res and hasattr(res, 'text_content'):
+                    content = res.text_content
+                    if content is not None and isinstance(content, str) and len(content) > 0:
+                        if len(content) > self.max_length:
+                            content = content[: self.max_length] + "..."
+                        result.raw_content = content
+            except Exception as e:
+                # Content fetching failed, skip this result
+                pass
         return result
 
     def _get_engine_order(self) -> List[str]:

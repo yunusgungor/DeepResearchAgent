@@ -302,8 +302,16 @@ def display_chat_interface():
         col1, col2 = st.columns([9, 1])
         
         with col1:
+            # Örnek görev seçildiyse onu varsayılan değer olarak kullan
+            default_value = ""
+            if hasattr(st.session_state, 'selected_example_task'):
+                default_value = st.session_state.selected_example_task
+                # Görev kullanıldıktan sonra temizle
+                del st.session_state.selected_example_task
+            
             user_input = st.text_area(
                 "Mesajınızı yazın:",
+                value=default_value,
                 placeholder="DeepResearchAgent'a ne sormak istiyorsunuz?",
                 height=100,
                 key="chat_input"
@@ -326,7 +334,7 @@ def display_chat_interface():
         column = col1 if i % 2 == 0 else col2
         with column:
             if st.button(f"📋 {task[:50]}...", key=f"example_{i}"):
-                st.session_state.chat_input = task
+                st.session_state.selected_example_task = task
                 st.rerun()
     
     # Mesaj gönderme

@@ -71,8 +71,8 @@ class DeepAnalyzerTool(AsyncTool):
         
         # Eğer hiç analyzer model bulunamazsa varsayılan modeli kullan
         if not self.analyzer_models and model_manager.registed_models:
-            # Önce Gemini 2.5 Flash'ı ara
-            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gpt-4o", "gpt-4"]
+            # Sadece Gemini modellerini tercih et
+            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
             default_model_id = None
             
             for preferred in preferred_models:
@@ -93,8 +93,8 @@ class DeepAnalyzerTool(AsyncTool):
             summary_model_id = self.analyzer_config.summarizer_model_id
         
         if summary_model_id is None or summary_model_id not in model_manager.registed_models:
-            # Önce Gemini 2.5 Flash'ı ara
-            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gpt-4o", "gpt-4"]
+            # Sadece Gemini modellerini tercih et
+            preferred_models = ["gemini-2.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
             
             for preferred in preferred_models:
                 if preferred in model_manager.registed_models:
