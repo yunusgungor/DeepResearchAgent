@@ -75,6 +75,7 @@ from src.utils import (
 
 from src.logger import logger
 from src.models import Model
+from src.monitoring import monitor, broadcast_thinking, broadcast_decision, broadcast_sub_task
 
 
 def get_variable_names(self, template: str) -> Set[str]:
@@ -310,6 +311,13 @@ class MultiStepAgent(ABC):
         max_steps = max_steps or self.max_steps
         self.task = task
         self.interrupt_switch = False
+        
+        # Real-time monitoring başlat
+        import time
+        import uuid
+        task_id = f"task_{int(time.time())}_{str(uuid.uuid4())[:8]}"
+        monitor.start_task(task_id, task)
+        
         if additional_args is not None:
             self.state.update(additional_args)
             self.task += f"""
@@ -334,49 +342,174 @@ You have been provided with these additional arguments, that you can access usin
             self.python_executor.send_variables(variables=self.state)
             self.python_executor.send_tools({**self.tools, **self.managed_agents})
 
-        if stream:
-            # The steps are returned as they are executed through a generator to iterate on.
-            return self._run(task=self.task, max_steps=max_steps, images=images)
-        # Outputs are returned only at the end. We only look at the last step.
-        return deque(self._run(task=self.task, max_steps=max_steps, images=images), maxlen=1)[0].final_answer
+        try:
+            if stream:
+                # The steps are returned as they are executed through a generator to iterate on.
+                result = self._run(task=self.task, max_steps=max_steps, images=images)
+                # Generator'ı consume edip final answer'ı al
+                final_step = None
+                for step in result:
+                    final_step = step
+                final_answer = final_step.final_answer if hasattr(final_step, 'final_answer') else str(final_step)
+            else:
+                # Outputs are returned only at the end. We only look at the last step.
+                final_answer = deque(self._run(task=self.task, max_steps=max_steps, images=images), maxlen=1)[0].final_answer
+            
+            # Başarılı tamamlanma
+            monitor.end_task(True, str(final_answer))
+            return final_answer
+            
+        except Exception as e:
+            # Hata durumu
+            monitor.end_task(False, f"Hata: {str(e)}")
+            raise
 
     def _run(
         self, task: str, max_steps: int, images: list["PIL.Image.Image"] | None = None
     ):
         final_answer = None
         self.step_number = 1
+        
+        # Agent çalışma başlangıcı bildirimi
+        import asyncio
+        asyncio.create_task(monitor.broadcast_step(
+            "agent_start",
+            f"🤖 {self.name or 'Agent'} Başladı",
+            f"Görev: {task[:100]}...",
+            {"agent_name": self.name, "max_steps": max_steps},
+            self.name or "agent"
+        ))
+        
         while final_answer is None and self.step_number <= max_steps:
             if self.interrupt_switch:
                 raise AgentError("Agent interrupted.", self.logger)
+            
             step_start_time = time.time()
+            
+            # Adım başlangıcı bildirimi
+            asyncio.create_task(monitor.broadcast_step(
+                "step_start",
+                f"📝 Adım {self.step_number} Başladı",
+                f"Maksimum {max_steps} adımdan {self.step_number}. adım",
+                {"step_number": self.step_number, "max_steps": max_steps},
+                self.name or "agent"
+            ))
+            
             if self.planning_interval is not None and (
                 self.step_number == 1 or (self.step_number - 1) % self.planning_interval == 0
             ):
+                # Planlama adımı bildirimi
+                asyncio.create_task(monitor.broadcast_step(
+                    "planning",
+                    f"🧠 Planlama Aşaması",
+                    f"Adım {self.step_number} için plan oluşturuluyor",
+                    {"step_number": self.step_number, "is_first_step": self.step_number == 1},
+                    self.name or "agent"
+                ))
+                
                 planning_step = self._generate_planning_step(
                     task, is_first_step=(self.step_number == 1), step=self.step_number
                 )
                 self.memory.steps.append(planning_step)
                 yield planning_step
+                
+                # Plan tamamlandı bildirimi
+                plan_content = getattr(planning_step, 'plan', 'Plan oluşturuldu')
+                asyncio.create_task(monitor.broadcast_step(
+                    "planning",
+                    f"✅ Plan Tamamlandı",
+                    f"Plan: {str(plan_content)[:200]}...",
+                    {"plan": str(plan_content)[:500]},
+                    self.name or "agent"
+                ))
+                
             action_step = ActionStep(
                 step_number=self.step_number, start_time=step_start_time, observations_images=images
             )
+            
+            # Aksiyon çalıştırma bildirimi
+            asyncio.create_task(monitor.broadcast_step(
+                "action_execution",
+                f"⚡ Aksiyon Çalıştırılıyor",
+                f"Adım {self.step_number} aksiyonu işleniyor",
+                {"step_number": self.step_number},
+                self.name or "agent"
+            ))
+            
             try:
                 final_answer = self._execute_step(task, action_step)
+                
+                # Adım sonucu bildirimi
+                if final_answer is not None:
+                    asyncio.create_task(monitor.broadcast_step(
+                        "final_answer",
+                        f"🎯 Final Cevap Bulundu",
+                        f"Cevap: {str(final_answer)[:200]}...",
+                        {"final_answer": str(final_answer)[:500]},
+                        self.name or "agent"
+                    ))
+                else:
+                    # Aksiyon detayları
+                    action_type = getattr(action_step, 'action', {}).get('tool_name', 'Bilinmeyen')
+                    action_result = getattr(action_step, 'observations', 'İşlem tamamlandı')
+                    asyncio.create_task(monitor.broadcast_step(
+                        "action_result",
+                        f"📊 Aksiyon Sonucu",
+                        f"Tool: {action_type}, Sonuç: {str(action_result)[:200]}...",
+                        {"action_type": action_type, "result": str(action_result)[:500]},
+                        self.name or "agent"
+                    ))
+                    
             except AgentGenerationError as e:
                 # Agent generation errors are not caused by a Model error but an implementation error: so we should raise them and exit.
+                asyncio.create_task(monitor.broadcast_step(
+                    "agent_error",
+                    f"❌ Agent Hatası",
+                    f"Generation error: {str(e)}",
+                    {"error": str(e), "error_type": "AgentGenerationError"},
+                    self.name or "agent"
+                ))
                 raise e
             except AgentError as e:
                 # Other AgentError types are caused by the Model, so we should log them and iterate.
                 action_step.error = e
+                asyncio.create_task(monitor.broadcast_step(
+                    "step_error",
+                    f"⚠️ Adım Hatası",
+                    f"Hata: {str(e)}, devam ediliyor...",
+                    {"error": str(e), "error_type": "AgentError", "step_number": self.step_number},
+                    self.name or "agent"
+                ))
             finally:
                 self._finalize_step(action_step, step_start_time)
                 self.memory.steps.append(action_step)
+                
+                # Adım tamamlandı bildirimi
+                step_duration = action_step.end_time - step_start_time if hasattr(action_step, 'end_time') else 0
+                asyncio.create_task(monitor.broadcast_step(
+                    "step_complete",
+                    f"✅ Adım {self.step_number} Tamamlandı",
+                    f"Süre: {step_duration:.2f}s",
+                    {"step_number": self.step_number, "duration": step_duration},
+                    self.name or "agent"
+                ))
+                
                 yield action_step
                 self.step_number += 1
 
         if final_answer is None and self.step_number == max_steps + 1:
+            # Maksimum adım sayısına ulaşıldı bildirimi
+            asyncio.create_task(monitor.broadcast_step(
+                "max_steps_reached",
+                f"⏰ Maksimum Adım Sayısına Ulaşıldı",
+                f"{max_steps} adım tamamlandı, final cevap oluşturuluyor",
+                {"max_steps": max_steps},
+                self.name or "agent"
+            ))
+            
             final_answer = self._handle_max_steps_reached(task, images, step_start_time)
             yield action_step
+            
         yield FinalAnswerStep(final_answer)
 
     def _execute_step(self, task: str, memory_step: ActionStep) -> None | Any:

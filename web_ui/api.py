@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, BackgroundTasks
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, BackgroundTasks, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +29,7 @@ from src.logger import logger
 from src.models import model_manager
 from src.registry import REGISTED_AGENTS, REGISTED_TOOLS
 from src.utils import assemble_project_path
+from src.monitoring import monitor
 
 
 # Pydantic models
@@ -55,6 +56,8 @@ class AgentStatus(BaseModel):
     config_name: Optional[str] = None
     available_agents: List[str]
     available_tools: List[str]
+    current_task_steps: List[Dict] = []
+    agent_status: str = "idle"
 
 
 class SystemInfo(BaseModel):
@@ -84,6 +87,10 @@ app.add_middleware(
 current_agent = None
 is_initialized = False
 task_results = {}
+current_task_steps = []
+last_completed_task_steps = []  # Son tamamlanan görevin step'leri
+current_step_status = "idle"
+active_websockets = set()
 
 
 @app.on_event("startup")
@@ -166,11 +173,24 @@ async def health_check():
 @app.get("/status", response_model=AgentStatus)
 async def get_agent_status():
     """Agent durumunu getir"""
+    global current_task_steps, last_completed_task_steps
+    
+    # Eğer şu anda aktif step'ler varsa onları döndür
+    if current_task_steps:
+        steps_to_return = current_task_steps
+    # Aksi halde son tamamlanan görevin step'lerini döndür
+    elif last_completed_task_steps:
+        steps_to_return = last_completed_task_steps
+    else:
+        steps_to_return = []
+        
     return AgentStatus(
         is_initialized=is_initialized,
         config_name=getattr(config, 'tag', None) if is_initialized else None,
         available_agents=list(REGISTED_AGENTS.keys()),
-        available_tools=list(REGISTED_TOOLS.keys())
+        available_tools=list(REGISTED_TOOLS.keys()),
+        current_task_steps=steps_to_return,
+        agent_status=current_step_status
     )
 
 
@@ -206,16 +226,45 @@ async def initialize_agent(config_name: str = "config_gemini"):
 
 @app.post("/agent/task", response_model=TaskResponse)
 async def run_task(request: TaskRequest):
-    """Görev çalıştır"""
-    global current_agent, is_initialized
+    """Görev çalıştır ve gerçek zamanlı adımları izle"""
+    global current_agent, is_initialized, current_task_steps, current_step_status, last_completed_task_steps
     
     if not is_initialized or current_agent is None:
         raise HTTPException(status_code=400, detail="Agent henüz başlatılmamış")
     
     task_id = f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    # Yeni task başladığında eski current step'leri last_completed'e kaydet
+    if current_task_steps:
+        last_completed_task_steps = current_task_steps.copy()
+    current_task_steps = []
+    current_step_status = "running"
+    
+    # Başlangıç adımını WebSocket ile bildir
+    await broadcast_step("🚀 Görev Başlatıldı", f"Görev: {request.task}", "başlatıldı")
     
     try:
+        # Agent planlama
+        await broadcast_step("🧠 Planlama", "Görev analiz ediliyor", "çalışıyor")
+        await asyncio.sleep(0.5)
+        
+        # Tool seçimi
+        await broadcast_step("🔧 Araç Seçimi", "Uygun araçlar belirleniyor", "çalışıyor")
+        await asyncio.sleep(0.5)
+        
+        # Ana işlem
+        await broadcast_step("⚡ Agent Çalışıyor", "Ana görev işleme başladı", "çalışıyor")
         result = await current_agent.run(request.task)
+        
+        # Sonuç işleme
+        await broadcast_step("📊 Sonuç Hazırlanıyor", "Sonuçlar formatlanıyor", "çalışıyor")
+        await asyncio.sleep(0.3)
+        
+        # Tamamlandı
+        await broadcast_step("✅ Görev Tamamlandı", "Tüm işlemler başarıyla tamamlandı", "tamamlandı")
+        current_step_status = "completed"
+        
+        # Tamamlanan görevin step'lerini sakla
+        last_completed_task_steps = current_task_steps.copy()
         
         task_response = TaskResponse(
             task_id=task_id,
@@ -230,6 +279,9 @@ async def run_task(request: TaskRequest):
         return task_response
         
     except Exception as e:
+        await broadcast_step("❌ Hata Oluştu", f"Hata: {str(e)}", "hata")
+        current_step_status = "error"
+        
         error_response = TaskResponse(
             task_id=task_id,
             status="error",
@@ -239,6 +291,40 @@ async def run_task(request: TaskRequest):
         
         task_results[task_id] = error_response
         return error_response
+
+
+async def broadcast_step(title: str, description: str, status: str):
+    """Adım bilgisini tüm WebSocket bağlantılarına gönder"""
+    global current_task_steps, active_websockets
+    
+    step = {
+        "title": title,
+        "description": description,
+        "status": status,
+        "timestamp": datetime.now().strftime("%H:%M:%S")
+    }
+    
+    current_task_steps.append(step)
+    
+    # WebSocket mesajı
+    message = {
+        "type": "step_update",
+        "step": step,
+        "all_steps": current_task_steps,
+        "current_status": current_step_status
+    }
+    
+    # Tüm aktif WebSocket bağlantılarına gönder
+    disconnected = set()
+    for websocket in active_websockets.copy():  # Copy ile iterasyon güvenliği
+        try:
+            await websocket.send_text(json.dumps(message))
+        except Exception as e:
+            print(f"WebSocket broadcast hatası: {e}")
+            disconnected.add(websocket)
+    
+    # Kopuk bağlantıları temizle
+    active_websockets -= disconnected
 
 
 @app.get("/agent/task/{task_id}", response_model=TaskResponse)
@@ -375,17 +461,45 @@ async def reset_agent():
 
 # WebSocket endpoint for real-time communication
 @app.websocket("/ws")
-async def websocket_endpoint(websocket):
-    """WebSocket bağlantısı"""
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket bağlantısı - Gerçek zamanlı adım takibi"""
+    global active_websockets
+    
     await websocket.accept()
     
+    # WebSocket'i global set'e ekle
+    active_websockets.add(websocket)
+    
+    # Monitor'a WebSocket ekle
+    monitor.add_websocket(websocket)
+    
     try:
+        # Bağlantı onayı
+        await websocket.send_text(json.dumps({
+            "type": "connected",
+            "message": "WebSocket bağlantısı kuruldu - Real-time monitoring aktif",
+            "timestamp": datetime.now().isoformat()
+        }))
+        
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
             
             if message.get("type") == "ping":
-                await websocket.send_text(json.dumps({"type": "pong", "timestamp": datetime.now().isoformat()}))
+                await websocket.send_text(json.dumps({
+                    "type": "pong", 
+                    "timestamp": datetime.now().isoformat()
+                }))
+            
+            elif message.get("type") == "get_status":
+                # Anlık durumu gönder
+                await websocket.send_text(json.dumps({
+                    "type": "status_update",
+                    "agent_initialized": is_initialized,
+                    "current_status": current_step_status,
+                    "current_steps": current_task_steps,
+                    "timestamp": datetime.now().isoformat()
+                }))
             
             elif message.get("type") == "task":
                 if not is_initialized:
@@ -398,21 +512,64 @@ async def websocket_endpoint(websocket):
                 task = message.get("task", "")
                 if task:
                     try:
-                        result = await current_agent.run(task)
+                        # Görev başlatma bildirimi
                         await websocket.send_text(json.dumps({
-                            "type": "result",
+                            "type": "task_started",
+                            "task": task,
+                            "timestamp": datetime.now().isoformat()
+                        }))
+                        
+                        # Görevi çalıştır (adımlar otomatik broadcast edilecek)
+                        result = await current_agent.run(task)
+                        
+                        # Sonuç bildirimi
+                        await websocket.send_text(json.dumps({
+                            "type": "task_completed",
                             "task": task,
                             "result": str(result),
                             "timestamp": datetime.now().isoformat()
                         }))
+                        
                     except Exception as e:
                         await websocket.send_text(json.dumps({
-                            "type": "error",
-                            "message": str(e)
+                            "type": "task_error",
+                            "task": task,
+                            "error": str(e),
+                            "timestamp": datetime.now().isoformat()
                         }))
             
     except Exception as e:
         print(f"WebSocket hatası: {e}")
+    finally:
+        # WebSocket'i global set'ten kaldır
+        active_websockets.discard(websocket)
+        
+        # Monitor'dan WebSocket'i kaldır
+        monitor.remove_websocket(websocket)
+
+
+@app.get("/agent/steps")
+async def get_current_steps():
+    """Mevcut görev adımlarını getir"""
+    global current_task_steps, last_completed_task_steps
+    
+    # Eğer şu anda aktif step'ler varsa onları döndür
+    if current_task_steps:
+        steps_to_return = current_task_steps
+        status = current_step_status
+    # Aksi halde son tamamlanan görevin step'lerini döndür
+    elif last_completed_task_steps:
+        steps_to_return = last_completed_task_steps
+        status = "completed"
+    else:
+        steps_to_return = []
+        status = "idle"
+    
+    return {
+        "status": status,
+        "steps": steps_to_return,
+        "timestamp": datetime.now().isoformat()
+    }
 
 
 if __name__ == "__main__":

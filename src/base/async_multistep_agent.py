@@ -62,6 +62,7 @@ from src.utils import (
 
 from src.logger import logger
 from src.config import config
+from src.monitoring import monitor, broadcast_thinking, broadcast_decision, broadcast_sub_task
 
 
 def get_variable_names(self, template: str) -> Set[str]:
@@ -305,6 +306,12 @@ class AsyncMultiStepAgent(ABC):
         max_steps = max_steps or self.max_steps
         self.task = task
         
+        # Real-time monitoring başlat
+        import time
+        import uuid
+        task_id = f"task_{int(time.time())}_{str(uuid.uuid4())[:8]}"
+        monitor.start_task(task_id, task)
+        
         # Initialize the task instruction
         self.task = self.initialize_task_instruction()
         
@@ -336,52 +343,179 @@ You have been provided with these additional arguments, that you can access usin
             self.python_executor.send_variables(variables=self.state)
             self.python_executor.send_tools({**self.tools, **self.managed_agents})
 
-        if stream:
-            return await self._run(task=self.task, max_steps=max_steps, images=images)
+        try:
+            if stream:
+                result = await self._run(task=self.task, max_steps=max_steps, images=images)
+                # Final answer'ı almak için generator'ı tüket
+                final_step = None
+                async for step in result:
+                    final_step = step
+                monitor.end_task(success=True, result=str(final_step.final_answer)[:200] if hasattr(final_step, 'final_answer') else "Tamamlandı")
+                return result
 
-        step_queue = deque(maxlen=1)
-        async for step in self._run(task=self.task, max_steps=max_steps, images=images):
-            step_queue.append(step)
+            step_queue = deque(maxlen=1)
+            async for step in self._run(task=self.task, max_steps=max_steps, images=images):
+                step_queue.append(step)
 
-        return step_queue[0].final_answer
+            monitor.end_task(success=True, result=str(step_queue[0].final_answer)[:200] if step_queue else "Tamamlandı")
+            return step_queue[0].final_answer
+            
+        except Exception as e:
+            monitor.end_task(success=False, result=f"Hata: {str(e)}")
+            raise e
 
     async def _run(
         self, task: str, max_steps: int, images: list["PIL.Image.Image"] | None = None
     ):
         final_answer = None
         self.step_number = 1
+        
+        # Ana loop başlangıcı
+        await monitor.broadcast_step(
+            "agent_start",
+            f"🚀 Agent Başlatıldı",
+            f"Maksimum {max_steps} adımda görev çözülecek",
+            {"max_steps": max_steps, "task": task[:100]},
+            getattr(self, 'name', 'agent')
+        )
+        
         while final_answer is None and self.step_number <= max_steps:
             if self.interrupt_switch:
+                await monitor.broadcast_step(
+                    "agent_interrupted",
+                    f"⏹️ Agent Durduruldu",
+                    f"Kullanıcı tarafından durduruldu",
+                    {"step_number": self.step_number},
+                    getattr(self, 'name', 'agent')
+                )
                 raise AgentError("Agent interrupted.", self.logger)
+                
             step_start_time = time.time()
+            
+            # Adım başlangıcı
+            await monitor.broadcast_step(
+                "step_start",
+                f"📋 Adım {self.step_number} Başladı",
+                f"Adım {self.step_number} işleniyor",
+                {"step_number": self.step_number, "max_steps": max_steps},
+                getattr(self, 'name', 'agent')
+            )
+            
             if self.planning_interval is not None and (
                 self.step_number == 1 or (self.step_number - 1) % self.planning_interval == 0
             ):
+                # Planlama aşaması
+                await monitor.broadcast_step(
+                    "planning",
+                    f"🧠 Planlama Aşaması",
+                    f"Adım {self.step_number} için plan oluşturuluyor",
+                    {"step_number": self.step_number, "is_first_step": self.step_number == 1},
+                    getattr(self, 'name', 'agent')
+                )
+                
                 planning_step = await self._generate_planning_step(
                     task, is_first_step=(self.step_number == 1), step=self.step_number
                 )
                 self.memory.steps.append(planning_step)
+                
+                # Planlama tamamlandı
+                await monitor.broadcast_step(
+                    "planning_complete",
+                    f"✅ Plan Tamamlandı",
+                    f"Adım {self.step_number} için plan hazır",
+                    {"step_number": self.step_number},
+                    getattr(self, 'name', 'agent')
+                )
+                
                 yield planning_step
+                
             action_step = ActionStep(
                 step_number=self.step_number, start_time=step_start_time, observations_images=images
             )
+            
             try:
+                # Aksiyon execution başlangıcı
+                await monitor.broadcast_step(
+                    "action_execution",
+                    f"⚡ Aksiyon Çalıştırılıyor",
+                    f"Adım {self.step_number} aksiyonu başlatıldı",
+                    {"step_number": self.step_number},
+                    getattr(self, 'name', 'agent')
+                )
+                
                 final_answer = await self._execute_step(task, action_step)
+                
+                if final_answer:
+                    # Final answer bulundu
+                    await monitor.broadcast_step(
+                        "final_answer",
+                        f"🎯 Final Cevap Bulundu",
+                        f"Görev tamamlandı: {str(final_answer)[:100]}...",
+                        {"step_number": self.step_number, "final_answer": str(final_answer)[:200]},
+                        getattr(self, 'name', 'agent')
+                    )
+                else:
+                    # Aksiyon detayları
+                    action_type = getattr(action_step, 'action', {}).get('tool_name', 'Bilinmeyen')
+                    action_result = getattr(action_step, 'observations', 'İşlem tamamlandı')
+                    await monitor.broadcast_step(
+                        "action_result",
+                        f"📊 Aksiyon Sonucu",
+                        f"Tool: {action_type}, Sonuç: {str(action_result)[:200]}...",
+                        {"action_type": action_type, "result": str(action_result)[:500]},
+                        getattr(self, 'name', 'agent')
+                    )
+                    
             except AgentGenerationError as e:
                 # Agent generation errors are not caused by a Model error but an implementation error: so we should raise them and exit.
+                await monitor.broadcast_step(
+                    "agent_error",
+                    f"❌ Agent Hatası",
+                    f"Generation error: {str(e)}",
+                    {"error": str(e), "error_type": "AgentGenerationError"},
+                    getattr(self, 'name', 'agent')
+                )
                 raise e
             except AgentError as e:
                 # Other AgentError types are caused by the Model, so we should log them and iterate.
                 action_step.error = e
+                await monitor.broadcast_step(
+                    "step_error",
+                    f"⚠️ Adım Hatası",
+                    f"Hata: {str(e)}, devam ediliyor...",
+                    {"error": str(e), "error_type": "AgentError", "step_number": self.step_number},
+                    getattr(self, 'name', 'agent')
+                )
             finally:
                 self._finalize_step(action_step, step_start_time)
                 self.memory.steps.append(action_step)
+                
+                # Adım tamamlandı bildirimi
+                step_duration = action_step.end_time - step_start_time if hasattr(action_step, 'end_time') else 0
+                await monitor.broadcast_step(
+                    "step_complete",
+                    f"✅ Adım {self.step_number} Tamamlandı",
+                    f"Süre: {step_duration:.2f}s",
+                    {"step_number": self.step_number, "duration": step_duration},
+                    getattr(self, 'name', 'agent')
+                )
+                
                 yield action_step
                 self.step_number += 1
 
         if final_answer is None and self.step_number == max_steps + 1:
+            # Maksimum adım sayısına ulaşıldı bildirimi
+            await monitor.broadcast_step(
+                "max_steps_reached",
+                f"⏰ Maksimum Adım Sayısına Ulaşıldı",
+                f"{max_steps} adım tamamlandı, final cevap oluşturuluyor",
+                {"max_steps": max_steps},
+                getattr(self, 'name', 'agent')
+            )
+            
             final_answer = await self._handle_max_steps_reached(task, images, step_start_time)
             yield action_step
+            
         yield FinalAnswerStep(final_answer)
 
     async def _execute_step(self, task: str, memory_step: ActionStep) -> None | Any:

@@ -53,11 +53,15 @@ from src.exception import (
     AgentParsingError,
     AgentToolCallError,
     AgentToolExecutionError,
+    AgentGenerationError,
 )
 from src.base.multistep_agent import MultiStepAgent, PromptTemplates, populate_template
 from src.models import Model
+from src.models.base import parse_json_if_needed
+from src.utils.agent_types import AgentImage, AgentAudio
 
 from src.logger import logger, YELLOW_HEX
+from src.monitoring import monitor, broadcast_thinking, broadcast_decision
 
 class ToolCallingAgent(MultiStepAgent):
     """
@@ -102,6 +106,17 @@ class ToolCallingAgent(MultiStepAgent):
         Perform one step in the ReAct framework: the agent thinks, acts, and observes the result.
         Returns None if the step is not final.
         """
+        import asyncio
+        
+        # Model çağrısı başlangıcı
+        asyncio.create_task(monitor.broadcast_step(
+            "model_thinking",
+            f"🧠 Model Düşünüyor",
+            f"Adım {self.step_number} için model çağrısı yapılıyor",
+            {"step_number": getattr(self, 'step_number', 0)},
+            getattr(self, 'name', 'agent')
+        ))
+        
         memory_messages = self.write_memory_to_messages()
 
         input_messages = memory_messages.copy()
@@ -110,6 +125,15 @@ class ToolCallingAgent(MultiStepAgent):
         memory_step.model_input_messages = input_messages
 
         try:
+            # Model input detayları
+            asyncio.create_task(monitor.broadcast_step(
+                "model_input",
+                f"📝 Model Girdisi Hazırlandı",
+                f"Mesaj sayısı: {len(input_messages)}, Tool sayısı: {len(self.tools)}",
+                {"message_count": len(input_messages), "tool_count": len(self.tools)},
+                getattr(self, 'name', 'agent')
+            ))
+            
             chat_message: ChatMessage = self.model(
                 input_messages,
                 stop_sequences=["Observation:", "Calling tools:"],
@@ -117,6 +141,16 @@ class ToolCallingAgent(MultiStepAgent):
             )
             memory_step.model_output_message = chat_message
             model_output = chat_message.content
+            
+            # Model çıktısı alındı
+            asyncio.create_task(monitor.broadcast_step(
+                "model_output",
+                f"🤖 Model Cevabı Alındı",
+                f"Çıktı uzunluğu: {len(model_output) if model_output else 0} karakter",
+                {"output_length": len(model_output) if model_output else 0},
+                getattr(self, 'name', 'agent')
+            ))
+            
             self.logger.log_markdown(
                 content=model_output if model_output else str(chat_message.raw),
                 title="Output message of the LLM:",
@@ -126,21 +160,55 @@ class ToolCallingAgent(MultiStepAgent):
             memory_step.model_output_message.content = model_output
             memory_step.model_output = model_output
         except Exception as e:
+            # Model hatası
+            asyncio.create_task(monitor.broadcast_step(
+                "model_error",
+                f"❌ Model Hatası",
+                f"Model çağrısında hata: {str(e)}",
+                {"error": str(e)},
+                getattr(self, 'name', 'agent')
+            ))
             raise AgentGenerationError(f"Error while generating output:\n{e}", self.logger) from e
+
+        # Tool call parsing başlangıcı
+        asyncio.create_task(monitor.broadcast_step(
+            "tool_parsing",
+            f"🔍 Tool Çağrısı Ayrıştırılıyor",
+            f"Model çıktısından tool çağrısı bulunuyor",
+            {},
+            getattr(self, 'name', 'agent')
+        ))
 
         if chat_message.tool_calls is None or len(chat_message.tool_calls) == 0:
             try:
                 chat_message = self.model.parse_tool_calls(chat_message)
             except Exception as e:
+                asyncio.create_task(monitor.broadcast_step(
+                    "parsing_error",
+                    f"❌ Ayrıştırma Hatası",
+                    f"Tool çağrısı ayrıştırılamadı: {str(e)}",
+                    {"error": str(e)},
+                    getattr(self, 'name', 'agent')
+                ))
                 raise AgentParsingError(f"Error while parsing tool call from model output: {e}", self.logger)
         else:
             for tool_call in chat_message.tool_calls:
                 tool_call.function.arguments = parse_json_if_needed(tool_call.function.arguments)
+                
         tool_call = chat_message.tool_calls[0]  # type: ignore
         tool_name, tool_call_id = tool_call.function.name, tool_call.id
         tool_arguments = tool_call.function.arguments
         memory_step.model_output = str(f"Called Tool: '{tool_name}' with arguments: {tool_arguments}")
         memory_step.tool_calls = [ToolCall(name=tool_name, arguments=tool_arguments, id=tool_call_id)]
+
+        # Tool çağrısı bulundu
+        asyncio.create_task(monitor.broadcast_step(
+            "tool_found",
+            f"🔧 Tool Çağrısı Bulundu",
+            f"Tool: {tool_name}, Parametreler: {str(tool_arguments)[:100]}...",
+            {"tool_name": tool_name, "arguments": str(tool_arguments)[:200]},
+            getattr(self, 'name', 'agent')
+        ))
 
         # Execute
         self.logger.log(
@@ -148,6 +216,15 @@ class ToolCallingAgent(MultiStepAgent):
             level=LogLevel.INFO,
         )
         if tool_name == "final_answer":
+            # Final answer işlemi
+            asyncio.create_task(monitor.broadcast_step(
+                "final_answer_processing",
+                f"🎯 Final Cevap İşleniyor",
+                f"Final answer hazırlanıyor",
+                {"tool_name": tool_name},
+                getattr(self, 'name', 'agent')
+            ))
+            
             if isinstance(tool_arguments, dict):
                 if "answer" in tool_arguments:
                     answer = tool_arguments["answer"]
@@ -173,9 +250,20 @@ class ToolCallingAgent(MultiStepAgent):
             memory_step.action_output = final_answer
             return final_answer
         else:
+            # Regular tool execution
+            asyncio.create_task(monitor.broadcast_step(
+                "tool_execution_start",
+                f"⚡ Tool Çalıştırılıyor",
+                f"'{tool_name}' tool'u çalıştırılmaya başlandı",
+                {"tool_name": tool_name, "arguments": str(tool_arguments)[:200]},
+                getattr(self, 'name', 'agent')
+            ))
+            
             if tool_arguments is None:
                 tool_arguments = {}
             observation = self.execute_tool_call(tool_name, tool_arguments)
+            
+            # Tool execution tamamlandı
             observation_type = type(observation)
             if observation_type in [AgentImage, AgentAudio]:
                 if observation_type == AgentImage:
@@ -188,6 +276,16 @@ class ToolCallingAgent(MultiStepAgent):
                 updated_information = f"Stored '{observation_name}' in memory."
             else:
                 updated_information = str(observation).strip()
+                
+            # Tool sonucu alındı
+            asyncio.create_task(monitor.broadcast_step(
+                "tool_result",
+                f"✅ Tool Sonucu Alındı",
+                f"'{tool_name}' tool'u tamamlandı: {updated_information[:100]}...",
+                {"tool_name": tool_name, "result": updated_information[:300]},
+                getattr(self, 'name', 'agent')
+            ))
+            
             self.logger.log(
                 f"Observations: {updated_information.replace('[', '|')}",  # escape potential rich-tag-like components
                 level=LogLevel.INFO,
@@ -214,9 +312,27 @@ class ToolCallingAgent(MultiStepAgent):
             tool_name (`str`): Name of the tool or managed agent to execute.
             arguments (dict[str, str] | str): Arguments passed to the tool call.
         """
+        import asyncio
+        
+        # Tool çalıştırma başlangıcı
+        asyncio.create_task(monitor.broadcast_step(
+            "tool_execution_detail",
+            f"🔧 '{tool_name}' Hazırlanıyor",
+            f"Tool parametreleri kontrol ediliyor",
+            {"tool_name": tool_name, "arguments": str(arguments)[:200]},
+            getattr(self, 'name', 'agent')
+        ))
+        
         # Check if the tool exists
         available_tools = {**self.tools, **self.managed_agents}
         if tool_name not in available_tools:
+            asyncio.create_task(monitor.broadcast_step(
+                "tool_not_found",
+                f"❌ Tool Bulunamadı",
+                f"'{tool_name}' tool'u mevcut değil. Mevcut tool'lar: {', '.join(list(available_tools.keys())[:3])}...",
+                {"tool_name": tool_name, "available_tools": list(available_tools.keys())[:5]},
+                getattr(self, 'name', 'agent')
+            ))
             raise AgentToolExecutionError(
                 f"Unknown tool {tool_name}, should be one of: {', '.join(available_tools)}.", self.logger
             )
@@ -225,15 +341,37 @@ class ToolCallingAgent(MultiStepAgent):
         tool = available_tools[tool_name]
         arguments = self._substitute_state_variables(arguments)
         is_managed_agent = tool_name in self.managed_agents
+        
+        # Tool tipi ve parametreler
+        tool_type = "Yönetilen Agent" if is_managed_agent else "Tool"
+        asyncio.create_task(monitor.broadcast_step(
+            "tool_prepare",
+            f"⚙️ {tool_type} Çalıştırılıyor",
+            f"'{tool_name}' {tool_type.lower()}'ı parametrelerle birlikte çalıştırılıyor",
+            {"tool_name": tool_name, "tool_type": tool_type, "is_managed_agent": is_managed_agent},
+            getattr(self, 'name', 'agent')
+        ))
 
         try:
             # Call tool with appropriate arguments
             if isinstance(arguments, dict):
-                return tool(**arguments) if is_managed_agent else tool(**arguments, sanitize_inputs_outputs=True)
+                result = tool(**arguments) if is_managed_agent else tool(**arguments, sanitize_inputs_outputs=True)
             elif isinstance(arguments, str):
-                return tool(arguments) if is_managed_agent else tool(arguments, sanitize_inputs_outputs=True)
+                result = tool(arguments) if is_managed_agent else tool(arguments, sanitize_inputs_outputs=True)
             else:
                 raise TypeError(f"Unsupported arguments type: {type(arguments)}")
+            
+            # Tool başarıyla tamamlandı
+            result_preview = str(result)[:200] if result else "Sonuç alındı"
+            asyncio.create_task(monitor.broadcast_step(
+                "tool_success",
+                f"✅ '{tool_name}' Başarılı",
+                f"Tool başarıyla tamamlandı: {result_preview}...",
+                {"tool_name": tool_name, "result_length": len(str(result)), "result_preview": result_preview},
+                getattr(self, 'name', 'agent')
+            ))
+            
+            return result
 
         except TypeError as e:
             # Handle invalid arguments
@@ -252,6 +390,16 @@ class ToolCallingAgent(MultiStepAgent):
                     f"Returns output type: {tool.output_type}\n"
                     f"Tool description: '{description}'"
                 )
+            
+            # Tool parametresi hatası
+            asyncio.create_task(monitor.broadcast_step(
+                "tool_parameter_error",
+                f"❌ '{tool_name}' Parametre Hatası",
+                f"Geçersiz parametreler: {str(e)}",
+                {"tool_name": tool_name, "error": str(e), "error_type": "TypeError"},
+                getattr(self, 'name', 'agent')
+            ))
+            
             raise AgentToolCallError(error_msg, self.logger) from e
 
         except Exception as e:
@@ -266,4 +414,14 @@ class ToolCallingAgent(MultiStepAgent):
                     f"Error executing tool '{tool_name}' with arguments {json.dumps(arguments)}: {type(e).__name__}: {e}\n"
                     "Please try again or use another tool"
                 )
+            
+            # Tool execution hatası
+            asyncio.create_task(monitor.broadcast_step(
+                "tool_execution_error",
+                f"❌ '{tool_name}' Çalışma Hatası",
+                f"Tool çalıştırma hatası: {str(e)}",
+                {"tool_name": tool_name, "error": str(e), "error_type": type(e).__name__},
+                getattr(self, 'name', 'agent')
+            ))
+            
             raise AgentToolExecutionError(error_msg, self.logger) from e
